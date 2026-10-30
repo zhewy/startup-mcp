@@ -1,0 +1,8 @@
+{
+  "id": "bootstrap",
+  "title": "Brain Session Startup Playbook (fixture stand-in)",
+  "version": "v1",
+  "fetched_at": "2026-10-01T00:00:00+00:00",
+  "mandatory": true,
+  "content": "FIXTURE CONTENT (Phase 2 — not live Brain data). This stands in for the live Brain bootstrap document that the real startup procedure retrieves first in Phase 3. It would normally identify the current canonical designations and the mandatory/conditional reading list that governs this session."
+}

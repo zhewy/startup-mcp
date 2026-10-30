@@ -1,0 +1,31 @@
+{
+  "canonical_version": "canon-fixture-2026.10",
+  "bootstrap_source_id": "bootstrap",
+  "base_contract_source_id": "base_contract",
+  "role_for_topic": {
+    "devotions": "chaplain"
+  },
+  "role_contract_source_ids": {
+    "chaplain": "role_contract_chaplain"
+  },
+  "mandatory_source_ids": [
+    "bootstrap",
+    "base_contract",
+    "role_contract_chaplain"
+  ],
+  "topic_source_ids": {
+    "devotions": [
+      "topic_devotions"
+    ]
+  },
+  "decision_source_ids": [
+    "decision_001"
+  ],
+  "continuity_source_ids": [
+    "continuity_001"
+  ],
+  "optional_source_ids": [
+    "continuity_001"
+  ],
+  "write_authority": false
+}

@@ -1,0 +1,8 @@
+{
+  "id": "continuity_001",
+  "title": "Continuity Note 001 (fixture stand-in)",
+  "version": "v1",
+  "fetched_at": "2026-10-01T00:00:00+00:00",
+  "mandatory": false,
+  "content": "FIXTURE CONTENT (Phase 2 — not live Brain data). Stands in for an optional continuity note. Its absence should DEGRADE, not BLOCK, a startup result."
+}
