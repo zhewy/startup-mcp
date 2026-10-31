@@ -7,6 +7,24 @@ in the cloud and pull again. Otherwise the two environments drift and "pull = kn
 being true, which is exactly the problem that caused the Windows clone to end up four commits
 behind and still running the old `topic=` parameter (see `docs/08-initialization-investigation.md`).
 
+## Multiple AI tools, one branch
+
+This repo may be edited by more than one AI coding tool (Cursor, Claude Code, Codex CLI) pointed
+at the same branch, but all from a single computer, under a fixed rule: **strict serialization,
+one tool editing at a time.** Concretely:
+
+- Only one tool gets an edit task at a time. Wait for it to commit *and push* before handing
+  anything to the next one.
+- Every tool pulls fresh immediately before starting new work, not just after finishing — a tool
+  working from a stale checkout can confidently redo or contradict something another tool already
+  changed (exactly how the Windows clone ended up four commits behind and still on `topic=`).
+- Git's push rejection on a stale branch is the last-resort safety net here, not the plan — the
+  plan is that two tools are never mid-edit at the same time in the first place.
+
+This is deliberately simpler than giving each tool its own branch: with one computer and strict
+turn-taking, there's no real concurrency to design around, so a single shared branch with a pull
+→ edit → test → commit → push → next-tool-pulls cycle is sufficient.
+
 ## The loop
 
 **1. Edit and validate in the cloud.**
