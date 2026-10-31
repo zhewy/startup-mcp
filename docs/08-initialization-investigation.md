@@ -226,6 +226,67 @@ and is not pursued further here: it looks like Claude Desktop's own behavior, no
 fixable or diagnosable from this project's side. Worth a one-line mention if ever filing feedback
 with Anthropic about Claude Desktop's MCP process management, but out of scope for this repo.
 
+## 0.9. Round 5 empirical results — Codex CLI, kofimule (31 Oct 2026)
+
+First data point from a CLI coding-agent host rather than a Desktop GUI client (see
+`06-test-plan.md` §G for why this is tracked as a separate, non-equivalent stream). Run via a
+Remote Control bridge session on kofimule. Repo state: clone at `e002b48` on
+`claude/cool-franklin-81hsgd`, fresh `.venv` with an editable install (`pytest` → "12 passed in
+0.68s"). System `python3` on that machine has neither `pytest` nor `startup_mcp` installed, so
+`.venv/bin/python` was used throughout, including in the `codex mcp add` command itself.
+
+**Wiring:**
+```
+codex mcp add startup-mcp --env STARTUP_MCP_FIXTURE_ROOT=<clone>/src/startup_mcp/fixtures/default -- <clone>/.venv/bin/python -m startup_mcp.server
+```
+`codex mcp get startup-mcp` confirmed `enabled: true`, `transport: stdio`, command pointing at
+the venv's `python`, args `-m startup_mcp.server`. No other configured server
+(`iqbible`/`brain-recall`/`hub`) was touched.
+
+**Server stderr is not captured anywhere Codex persists.** Searched `~/.codex` entirely,
+including `logs_2.sqlite` (table `logs`, 39,734 rows), for `"startup tool invoked"`,
+`"startup_mcp"`, `"startup-mcp"` — no match. Only `codex_app_server` events like
+`"mcpServer/startupStatus/updated"` appeared; nothing from this server's own logger. This server
+only logs to stderr, and Codex doesn't surface or store it — the only way to get the
+`invoked`/`returned` log lines through this host would be to redirect them yourself (e.g. a
+`sh -c '... 2>>file'` wrapper in the `codex mcp add` command). What Codex *does* expose is its own
+tool-call event stream via `codex exec --json`, which is what the two tests below rely on instead.
+
+**Test 4 — explicit invocation:**
+```
+codex exec --json --skip-git-repo-check --ephemeral -s read-only \
+  -c 'mcp_servers.startup-mcp.default_tools_approval_mode="approve"' \
+  "Call the startup tool with purpose devotions"
+```
+(The `-c` approval override was a per-run flag, not a persisted config edit — without it, the
+call fails outright: `"mcp: startup-mcp/startup (failed) / MCP tool call requires approval, but
+approval policy is never"`, confirmed as a separate finding.) With the override, the event
+stream showed:
+```
+item.started   {"type":"mcp_tool_call","server":"startup-mcp","tool":"startup","arguments":{"purpose":"devotions"},"status":"in_progress"}
+item.completed ... result text starts {"status":"READY","request":{"operation":"startup","purpose":"devotions","role_hint":null},"grounding":{"bootstrap":{"content":"FIXTURE CONTENT (Phase 2 — not live Brain data)...
+```
+Codex's own closing message: "Called startup with purpose `devotions`. Returned READY, resolving
+role chaplain." Explicit invocation works end-to-end on this host, same as Desktop Round 2.
+
+**Test 5 — unprompted invocation**, prompt `"let's do devotions today"`, same flags, run 3 times
+(one plain, two with `--json`):
+- In both `--json` runs the only item type present was `agent_message` — no `mcp_tool_call` item
+  at all.
+- The model (`gpt-6.1-sol`) answered directly with a devotion — Psalm 46:10 in all three runs,
+  Matthew 11:28 additionally on the first — instead of calling `startup`.
+- Confirmed the event filter itself does surface `mcp_tool_call` items (it did, in Test 4), so
+  their absence here isn't a logging gap.
+
+**Result: no automatic invocation, 3 of 3 runs**, on Codex CLI (`codex-cli` 0.166.0, model
+`gpt-6.1-sol`) — consistent in direction with the Claude Desktop Round 1 result, but this is its
+own, separately-tracked data point (different vendor, different host, different model), not
+averaged with or substituted for the Desktop finding.
+
+**Cleanup:** the `startup-mcp` entry is still present in `~/.codex/config.toml` on kofimule
+pending a decision on whether to keep it there for further Codex testing or remove it
+(`codex mcp remove startup-mcp`).
+
 ## 1. Answers to Q1-Q7
 
 **Q1. Does Claude Desktop expose MCP server initialization instructions to the model?**

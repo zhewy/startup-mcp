@@ -137,7 +137,17 @@ session "would you call startup" directly — that primes it. Give it an ordinar
 whether it reaches for the tool unprompted, same as the "let's do devotions today" framing used
 for Desktop.
 
-Status: tracked, not yet run. Both streams are open.
+**Codex CLI stream: run (31 Oct 2026).** Wired in via `codex mcp add`, tested on kofimule via a
+Remote Control bridge session. Explicit invocation (`"Call the startup tool with purpose
+devotions"`) worked end-to-end, READY, role resolved to chaplain. Unprompted invocation
+(`"let's do devotions today"`, 3 runs) did **not** happen — the model answered directly from its
+own knowledge each time instead of calling `startup`. Codex does not persist this server's stderr
+anywhere discoverable (`~/.codex`, including `logs_2.sqlite`, searched directly) — only its own
+`mcp_tool_call` event stream via `codex exec --json` is usable as evidence, which is what both
+tests above relied on. Full raw evidence: `08-initialization-investigation.md` §0.9. The
+`startup-mcp` entry is still live in `~/.codex/config.toml` on kofimule, not yet removed.
+
+**Claude Code CLI stream: not yet run.** Still open.
 
 ## Exit criteria for each phase
 
