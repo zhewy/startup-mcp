@@ -100,9 +100,26 @@ streams:
   present on kofimule.
 - **Codex CLI** (OpenAI) — **confirmed installed on kofimule** (31 Oct 2026): `codex-cli 0.166.0`
   at `/home/arty/.local/bin/codex`, installed globally via npm (`@openai/codex@0.166.0`). No
-  install step needed on that machine. Its MCP config mechanism is separate again from both
-  Claude's and from ChatGPT Desktop's Developer Mode settings covered in `01-feasibility.md` —
-  not yet checked what that mechanism actually is on this install.
+  install step needed on that machine.
+
+  **Its own MCP config mechanism, confirmed (31 Oct 2026):** separate from both Claude's and
+  from ChatGPT Desktop's Developer Mode settings. `codex mcp` subcommand (`list`/`get`/`add`/
+  `remove`/`login`/`logout`); config lives at `~/.codex/config.toml`, servers under
+  `[mcp_servers.<name>]`. Both stdio and streamable-HTTP transports supported — stdio via
+  `command`/`args`/`env` (plus `startup_timeout_sec`, `tool_timeout_sec`,
+  `default_tools_approval_mode`), HTTP via `url`/`http_headers`. Stdio add syntax:
+  `codex mcp add <NAME> [--env KEY=VAL] -- <COMMAND>...`.
+
+  That config file already has three servers configured on kofimule: `iqbible` and
+  `brain-recall` (both HTTP), and `hub` (stdio, a Python `mcphub.cli` server). Startup MCP is
+  **not wired in yet** — recon only, as instructed.
+
+  **Security note, not acted on (out of scope for this project):** the reporting session found
+  `brain-recall`'s config has a plaintext bearer token under `http_headers` in `config.toml`, and
+  deliberately withheld the value from its report rather than relaying a secret. It suggested
+  moving it to `--bearer-token-env-var` instead. That's a different, unrelated MCP server's
+  credential storage — flagged here for the user's awareness, not something to fix from this
+  project.
 
 **The same non-equivalence applies to both, for the same reason:** a CLI coding agent is a
 different host application from its vendor's consumer chat app — different system prompt,
