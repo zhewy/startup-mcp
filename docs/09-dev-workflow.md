@@ -25,6 +25,30 @@ This is deliberately simpler than giving each tool its own branch: with one comp
 turn-taking, there's no real concurrency to design around, so a single shared branch with a pull
 → edit → test → commit → push → next-tool-pulls cycle is sufficient.
 
+## Why bridge sessions can't message the cloud coordinator back by session ID
+
+Recurring friction worth fixing at the instruction level, not re-discovering each time: a Remote
+Control bridge session (e.g. on kofimule) and this cloud coordinator session use two different
+messaging tools that don't share an addressing scheme.
+
+- This session reaches a bridge session with a session-ID-addressed tool
+  (`mcp__claude-code-remote__send_message`, taking the full `session_...` ID).
+- A bridge session only has a generic `SendMessage` tool that addresses by **name**, taken from
+  its own `ListAgents` peer list — it has no concept of the `session_...` ID format at all, and
+  `ListAgents` doesn't surface IDs either, only names/refs.
+
+So telling a bridge session "send your findings back to `session_017SNSNRSrouifawxmQQHMk3`"
+always fails (`No agent named '...' is reachable`), regardless of which bridge session it is —
+that's not a one-off bug, it's a structural mismatch between the two tools.
+
+**Fix:** in any handover/follow-up message to a bridge session, tell it the coordinator's current
+*name* (call `ListAgents` from this session, or note the title shown in this session's own
+header) instead of the session ID — e.g. "when done, use `SendMessage` with `to` set to the name
+matching this project's cloud coordinator session (currently titled `startupmcp coordinator`,
+but call `ListAgents` and confirm, since titles can change)." If it still can't find a match,
+don't have it guess — the fallback is the same as always: it reports findings in its own final
+response, and the human relays them here manually.
+
 ## The loop
 
 **1. Edit and validate in the cloud.**
