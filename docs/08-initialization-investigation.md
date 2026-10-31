@@ -190,6 +190,33 @@ The next live test that triggers a `startup` call will show, definitively, which
 actually serves requests — closing this open question with direct evidence instead of timing
 inference.
 
+**Round 4 result (1 Nov 2026), after the pid-logging fix — definitive, and corrects the earlier
+guess:**
+
+```
+00:11:58,520 startup-mcp process starting: pid=23000 ...
+00:11:58,526 startup-mcp entering stdio serve loop: pid=23000
+00:12:00,157 startup-mcp process starting: pid=6100 ...
+00:12:00,159 startup-mcp entering stdio serve loop: pid=6100
+00:12:13,876 startup tool invoked: pid=23000 topic='devotions' role_hint=None
+00:12:13,878 startup tool returned: pid=23000 topic='devotions' status=READY unresolved=0 warnings=0
+```
+
+The call went to **pid 23000, the first-spawned process** — not the second one, contradicting
+this doc's earlier timing-based guess (which pointed at the later-spawned pid in Round 3). That
+earlier guess is now known to be wrong, not just unconfirmed; recorded here rather than quietly
+corrected, since the point of this doc is to distinguish inference from evidence.
+
+**Status of this thread: behaviorally closed, root cause still open.** Across all observed runs:
+a second, idle `python -m startup_mcp.server` process is spawned a second or two after the first,
+under the same Claude Desktop parent, and never does anything — this doesn't affect correctness
+(the three READY/DEGRADED results in Round 3 were unaffected) and isn't a bug in this server (the
+server does nothing to cause its own duplication; it's spawned, once each, by the client). The
+*cause* — why Claude Desktop launches a second instance it never talks to — remains unexplained
+and is not pursued further here: it looks like Claude Desktop's own behavior, not something
+fixable or diagnosable from this project's side. Worth a one-line mention if ever filing feedback
+with Anthropic about Claude Desktop's MCP process management, but out of scope for this repo.
+
 ## 1. Answers to Q1-Q7
 
 **Q1. Does Claude Desktop expose MCP server initialization instructions to the model?**
