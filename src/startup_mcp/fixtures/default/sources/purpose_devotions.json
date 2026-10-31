@@ -1,0 +1,8 @@
+{
+  "id": "purpose_devotions",
+  "title": "Devotions — Purpose Knowledge (fixture stand-in)",
+  "version": "v1",
+  "fetched_at": "2026-10-01T00:00:00+00:00",
+  "mandatory": false,
+  "content": "FIXTURE CONTENT (Phase 2 — not live Brain data). This stands in for purpose-specific Brain knowledge about 'devotions' that would be retrieved live from the Brain folder in Phase 3."
+}

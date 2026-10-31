@@ -8,10 +8,10 @@ client (manual, one-time per phase).
 
 | # | Brief §11 item | Test |
 |---|---|---|
-| 6 | Identical inputs + source versions → equivalent results | `test_determinism`: two calls with the same topic against the fixture source produce identical `grounding`/`sources`/`versions`/`status`, differing only in `receipt.generated_at`. |
+| 6 | Identical inputs + source versions → equivalent results | `test_determinism_across_identical_calls`: two calls with the same purpose against the fixture source produce identical `grounding`/`sources`/`versions`/`status`, differing only in `receipt.generated_at`. |
 | 7 | Missing mandatory sources → BLOCKED, not false success | `test_missing_mandatory_source_blocks`: fixture with a mandatory source deleted → `status == "BLOCKED"` and the missing id appears in `unresolved`. |
-| 8 | Source identities and provenance retained | `test_sources_have_provenance`: every entry in `sources[]` has non-empty `source_id`, `version`, `fetched_at`. |
-| 5 | `devotions` produces relevant topic grounding | `test_devotions_topic`: `startup(topic="devotions")` against the fixture returns a `topic_context` entry sourced from the devotions fixture file, not from an unrelated topic. |
+| 8 | Source identities and provenance retained | `test_sources_retain_provenance`: every entry in `sources[]` has non-empty `source_id`, `version`, `fetched_at`. |
+| 5 | `devotions` produces relevant purpose grounding | `test_devotions_purpose_produces_relevant_grounding`: `startup(purpose="devotions")` against the fixture returns a `purpose_context` entry sourced from the devotions fixture file, not from an unrelated purpose. |
 | — | Optional material missing → DEGRADED, not BLOCKED | `test_optional_missing_degrades`: fixture with only a non-mandatory continuity entry removed → `status == "DEGRADED"`, mandatory grounding still present, `warnings` names it. |
 | — | Context-size budget enforcement | `test_budget_truncation`: a fixture engineered to exceed a small configured budget → bundle stays within budget, `sources[]` still lists every *consulted* source (budget affects what's inlined under `grounding`, not the provenance ledger), and this is recorded in `warnings`. |
 | — | `role` input is advisory only | `test_role_hint_does_not_grant_authority`: calling with a `role` hint that doesn't match the canonical-resolved role still resolves the role from canonical data, not from the hint, and emits a mismatch warning. |
@@ -40,7 +40,7 @@ pytest
 4. Start a fresh conversation in each client with no explicit instruction beyond a task that
    implies needing Brain grounding (e.g. "let's do devotions today"). Record whether the model
    calls `startup` unprompted, and compare against the same scenario with an explicit instruction
-   ("call the startup tool for topic devotions first").
+   ("call the startup tool for purpose devotions first").
 
 ## D. Manual — Desktop → Web continuity (per provider, after Phase 3 Drive integration exists)
 
@@ -75,8 +75,8 @@ pytest
    confirms the Q7 fallback actually works on this client, in direct contrast to Run 1's result
    on the same install.
 
-   **Run 3 (31 Oct 2026, same machine): done — topic routing (`devotionals`, `librarian`, an
-   unmapped topic) confirmed live via explicit calls, all three statuses matched expectation.**
+   **Run 3 (31 Oct 2026, same machine): done — purpose routing (`devotionals`, `librarian`, an
+   unmapped purpose) confirmed live via explicit calls, all three statuses matched expectation.**
    See `08-initialization-investigation.md` §0.7. Content itself was only verified by a local
    check against the same fixture, not captured through the Desktop path directly — that
    distinction is preserved in §0.7 rather than blurred.

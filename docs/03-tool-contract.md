@@ -1,16 +1,22 @@
 # MCP Tool Contract
 
+**Naming note:** the handover brief's illustrative signature uses `topic` (e.g.
+`startup(topic: string, role?: string)`). This implementation uses `purpose` instead — same
+concept, renamed deliberately after the Phase 2 prototype was already live and tested (see
+`docs/08-initialization-investigation.md`, which preserves pre-rename log quotes verbatim and
+notes the rename explicitly). Everything below reflects the current, post-rename contract.
+
 ## Tool: `startup`
 
 ### Description (as exposed to the calling model)
 
 > Retrieve and validate the mandatory grounding (bootstrap, canonical designations, Base and role
-> contracts, topic knowledge, decisions, continuity) required to begin a Brain-grounded
-> conversation on the given topic. Call this once, before any other reasoning about the topic, at
-> the start of a new conversation. Do not attempt to independently discover or reconstruct
-> grounding documents — this tool performs that retrieval deterministically. Returns a structured
-> bundle with an explicit `status` of READY, DEGRADED, or BLOCKED; never treat ungrounded
-> reasoning as equivalent to a READY result.
+> contracts, purpose knowledge, decisions, continuity) required to begin a Brain-grounded
+> conversation for the given purpose. Call this once, before any other reasoning about the
+> purpose, at the start of a new conversation. Do not attempt to independently discover or
+> reconstruct grounding documents — this tool performs that retrieval deterministically. Returns
+> a structured bundle with an explicit `status` of READY, DEGRADED, or BLOCKED; never treat
+> ungrounded reasoning as equivalent to a READY result.
 
 (Rationale for the directive tone: per brief §9, invocation reliability is improved, not
 guaranteed, by making the tool description itself tell the model when and why to call it.)
@@ -21,7 +27,7 @@ guaranteed, by making the tool description itself tell the model when and why to
 {
   "type": "object",
   "properties": {
-    "topic": {
+    "purpose": {
       "type": "string",
       "description": "The subject of the conversation to ground, e.g. \"devotions\". Required."
     },
@@ -30,7 +36,7 @@ guaranteed, by making the tool description itself tell the model when and why to
       "description": "Optional hint for which role context the caller believes applies. This is advisory only: it does not grant authority and does not bypass role-selection rules. The server resolves the actual applicable role contract(s) from current canonical designations, independent of this value, and will report in `warnings` if the hint conflicts with the resolved role."
     }
   },
-  "required": ["topic"]
+  "required": ["purpose"]
 }
 ```
 
@@ -43,14 +49,14 @@ Matches brief §5, with field semantics pinned down:
   "status": "READY | DEGRADED | BLOCKED",
   "request": {
     "operation": "startup",
-    "topic": "string, echoed verbatim",
+    "purpose": "string, echoed verbatim",
     "role_hint": "string or null, echoed verbatim (renamed from input `role` to make clear it's a hint)"
   },
   "grounding": {
     "bootstrap": { "content": "...", "source_id": "...", "version": "...", "fetched_at": "ISO-8601" },
     "base_contract": { "content": "...", "source_id": "...", "version": "...", "fetched_at": "ISO-8601" },
     "role_contract": { "content": "...", "source_id": "...", "version": "...", "fetched_at": "ISO-8601", "resolved_role": "string" },
-    "topic_context": [ { "content": "...", "source_id": "...", "version": "...", "fetched_at": "ISO-8601" } ],
+    "purpose_context": [ { "content": "...", "source_id": "...", "version": "...", "fetched_at": "ISO-8601" } ],
     "decisions": [ { "content": "...", "source_id": "...", "version": "...", "fetched_at": "ISO-8601" } ],
     "continuity": [ { "content": "...", "source_id": "...", "version": "...", "fetched_at": "ISO-8601" } ]
   },
@@ -64,7 +70,7 @@ Matches brief §5, with field semantics pinned down:
   "receipt": {
     "generated_at": "ISO-8601",
     "source_versions": { "...": "..." },
-    "refresh_hint": "Call `startup` again with the same topic if this conversation is continued elsewhere or after significant truncation/compaction."
+    "refresh_hint": "Call `startup` again with the same purpose if this conversation is continued elsewhere or after significant truncation/compaction."
   }
 }
 ```
@@ -103,6 +109,6 @@ to avoid, not a non-zero exit code.
 
 ### Determinism
 
-For a fixed `(topic, role)` input and a fixed set of underlying source versions, the tool must
+For a fixed `(purpose, role)` input and a fixed set of underlying source versions, the tool must
 return byte-identical `grounding`/`sources`/`versions`/`status` content. `receipt.generated_at` is
 the only field allowed to vary between otherwise-identical calls.

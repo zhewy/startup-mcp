@@ -24,7 +24,7 @@ class SourceProvider(Protocol):
     """
 
     def get_manifest(self) -> dict[str, Any]:
-        """Return the current manifest: canonical version, mandatory source ids, topic index,
+        """Return the current manifest: canonical version, mandatory source ids, purpose index,
         role mapping, decision/continuity indexes, and governance data (e.g. write_authority)."""
         ...
 

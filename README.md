@@ -1,7 +1,7 @@
 # Startup MCP
 
 A lightweight, platform-neutral MCP server that moves the mechanical work of AI conversation
-startup — canonical retrieval, role grounding, topic-context assembly — into a deterministic
+startup — canonical retrieval, role grounding, purpose-context assembly — into a deterministic
 service, so a calling AI doesn't have to independently discover and interpret a chain of startup
 documents.
 
@@ -12,7 +12,7 @@ See `docs/` for the full design record:
    Desktop→Web continuity.
 2. [`02-architecture.md`](docs/02-architecture.md) — component map and the hardcoded-vs-retrieved
    split.
-3. [`03-tool-contract.md`](docs/03-tool-contract.md) — the `startup(topic, role?)` tool's input/
+3. [`03-tool-contract.md`](docs/03-tool-contract.md) — the `startup(purpose, role?)` tool's input/
    output schema and status semantics.
 4. [`04-authentication.md`](docs/04-authentication.md) — the proposed (not yet implemented) Google
    Drive OAuth approach for Phase 3.
@@ -36,7 +36,7 @@ stands in for live Brain retrieval (no Google Drive access yet — see decision 
 work? per `docs/06-test-plan.md`) get answered before any live-data risk is taken on.
 
 ```
-startup(topic="devotions")
+startup(purpose="devotions")
   -> { "status": "READY", "grounding": {...}, "sources": [...], ... }
 ```
 

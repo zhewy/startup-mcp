@@ -17,7 +17,7 @@ any claim otherwise as false.
    - A client-level slash command or MCP *prompt* the user invokes directly (e.g. typing
      `/startup devotions` if the client surfaces server-defined prompts as slash commands). This
      bypasses model judgement entirely — the user's explicit action calls the tool.
-   - A user typing a direct instruction ("call the startup tool with topic devotions") that
+   - A user typing a direct instruction ("call the startup tool with purpose devotions") that
      leaves the model little room to skip the call.
    - **Action for this repo**: expose an MCP `prompts/list` entry (e.g. `startup_devotions` or a
      parameterized `startup` prompt) alongside the tool, so clients that support prompt-based
@@ -26,7 +26,7 @@ any claim otherwise as false.
 
 2. **Tool metadata engineered for selection**: tool name (`startup`, not e.g. `get_context` or
    something more generic competing clients might shadow), and a description that explicitly says
-   *when* to call it ("at the start of a new conversation on this topic, before independent
+   *when* to call it ("at the start of a new conversation for this purpose, before independent
    reasoning") and *why not to substitute for it* ("do not attempt to independently discover
    grounding documents"). This raises the odds the model selects it unprompted, but is advisory,
    not enforced.
@@ -53,7 +53,7 @@ any claim otherwise as false.
 
 - No polling, no "did you call startup yet" nagging via side channels — there is no side channel;
   MCP servers can't inject unsolicited messages into a conversation.
-- No attempt to detect and route around a skipped call by inferring topic from conversation
+- No attempt to detect and route around a skipped call by inferring purpose from conversation
   history — that's exactly the kind of model-dependent discovery/interpretation brief §1 says this
   project exists to eliminate, not reintroduce inside the server.
 
@@ -73,5 +73,7 @@ The three lifecycle events this document was conflating — connection initializ
 startup, and task startup — are now disentangled explicitly, with answers to Q1-Q7 from the
 follow-up handover, in `08-initialization-investigation.md`. Notably: MCP has no protocol
 primitive for "new conversation" or "new task" at all, so the server can never detect either on
-its own — this is a confident architectural finding, not an open question, and it's why `topic`/
-`role` are call-time tool arguments rather than connection-level state.
+its own — this is a confident architectural finding, not an open question, and it's why `purpose`/
+`role` are call-time tool arguments rather than connection-level state. (The parameter was named
+`topic` at the time this finding was first written; see `docs/03-tool-contract.md`'s naming note
+for the later rename to `purpose`.)

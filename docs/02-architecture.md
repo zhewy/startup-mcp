@@ -46,7 +46,7 @@ Retrieved from Brain (fixture in Phase 2, live Drive in Phase 3) — never hardc
 - Canonical designations (which Base/role contracts currently apply).
 - Base and role contract text.
 - Mandatory reading list itself (which sources are mandatory is *data*, not code).
-- Topic knowledge for the requested topic.
+- Purpose knowledge for the requested purpose.
 - Decisions / continuity entries.
 - Permissions / governance rules (e.g. `write_authority`).
 
@@ -71,7 +71,7 @@ if that client turns out to need it, would be an additive transport binding over
 
 ## Determinism
 
-Given the same topic/role request and the same underlying source versions, `procedure.py` produces
+Given the same purpose/role request and the same underlying source versions, `procedure.py` produces
 byte-identical bundle content (modulo a `generated_at` timestamp field, which is explicitly
 excluded from any equality/determinism check). This is testable without live Drive access using
 the fixture provider, and `tests/test_server.py` asserts it.

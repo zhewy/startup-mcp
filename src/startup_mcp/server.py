@@ -26,11 +26,11 @@ logger = logging.getLogger("startup_mcp")
 
 TOOL_DESCRIPTION = (
     "Retrieve and validate the mandatory grounding (bootstrap, canonical designations, Base "
-    "and role contracts, topic knowledge, decisions, continuity) required to begin a "
-    "Brain-grounded conversation on the given topic. Call this with the current topic (and, if "
-    "known, a role hint) at the start of a new conversation, AND again at the start of any "
-    "substantive new task within an existing conversation — a prior call does not cover a "
-    "later, different task. Do not attempt to independently discover or reconstruct grounding "
+    "and role contracts, purpose knowledge, decisions, continuity) required to begin a "
+    "Brain-grounded conversation for the given purpose. Call this with the current purpose "
+    "(and, if known, a role hint) at the start of a new conversation, AND again at the start of "
+    "any substantive new task within an existing conversation — a prior call does not cover a "
+    "later, different purpose. Do not attempt to independently discover or reconstruct grounding "
     "documents yourself — this tool performs that retrieval deterministically. Returns a "
     "structured bundle with an explicit status of READY, DEGRADED, or BLOCKED; never treat "
     "ungrounded reasoning as equivalent to a READY result."
@@ -40,17 +40,17 @@ TOOL_DESCRIPTION = (
 def handle_startup(
     provider: SourceProvider,
     config: Config,
-    topic: str,
+    purpose: str,
     role: str | None = None,
 ) -> dict[str, Any]:
     """Core logic behind the `startup` tool, independent of the MCP runtime so it can be
     called directly in tests and swapped onto a different SourceProvider in Phase 3."""
-    result = run_startup(provider, topic=topic, role_hint=role)
+    result = run_startup(provider, purpose=purpose, role_hint=role)
     manifest = provider.get_manifest()
     return build_bundle(
         result,
         manifest,
-        topic=topic,
+        purpose=purpose,
         role_hint=role,
         budget_chars=config.context_budget_chars,
     )
@@ -60,7 +60,7 @@ SERVER_INSTRUCTIONS = (
     "This server provides deterministic session and task grounding for Brain-dependent "
     "conversations. Establishing this MCP connection does NOT by itself constitute grounding — "
     "no tool has been called yet, so nothing has been verified. Call the `startup` tool, with "
-    "the current topic and any available role context, at the beginning of a new conversation "
+    "the current purpose and any available role context, at the beginning of a new conversation "
     "AND again at the start of any substantive new task within an existing conversation (this "
     "connection may persist across many conversations and tasks; each one needs its own call). "
     "Do not independently discover or interpret Brain grounding documents — this server "
@@ -85,13 +85,15 @@ logger.info(
 
 
 @mcp.tool(name="startup", description=TOOL_DESCRIPTION)
-def startup(topic: str, role: str | None = None) -> dict[str, Any]:
-    logger.info("startup tool invoked: pid=%s topic=%r role_hint=%r", os.getpid(), topic, role)
-    response = handle_startup(_provider, _config, topic, role)
+def startup(purpose: str, role: str | None = None) -> dict[str, Any]:
     logger.info(
-        "startup tool returned: pid=%s topic=%r status=%s unresolved=%d warnings=%d",
+        "startup tool invoked: pid=%s purpose=%r role_hint=%r", os.getpid(), purpose, role
+    )
+    response = handle_startup(_provider, _config, purpose, role)
+    logger.info(
+        "startup tool returned: pid=%s purpose=%r status=%s unresolved=%d warnings=%d",
         os.getpid(),
-        topic,
+        purpose,
         response["status"],
         len(response["unresolved"]),
         len(response["warnings"]),

@@ -1,6 +1,6 @@
 {
-  "id": "topic_librarian",
-  "title": "Librarian — Topic Knowledge (fixture stand-in)",
+  "id": "purpose_librarian",
+  "title": "Librarian — Purpose Knowledge (fixture stand-in)",
   "version": "v1",
   "fetched_at": "2026-10-31T00:00:00+00:00",
   "mandatory": false,

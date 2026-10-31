@@ -2,7 +2,7 @@
   "canonical_version": "canon-fixture-2026.10",
   "bootstrap_source_id": "bootstrap",
   "base_contract_source_id": "base_contract",
-  "role_for_topic": {
+  "role_for_purpose": {
     "devotions": "chaplain",
     "devotionals": "chaplain",
     "librarian": "librarian"
@@ -16,15 +16,15 @@
     "base_contract",
     "role_contract_chaplain"
   ],
-  "topic_source_ids": {
+  "purpose_source_ids": {
     "devotions": [
-      "topic_devotions"
+      "purpose_devotions"
     ],
     "devotionals": [
-      "topic_devotionals"
+      "purpose_devotionals"
     ],
     "librarian": [
-      "topic_librarian"
+      "purpose_librarian"
     ]
   },
   "decision_source_ids": [

@@ -13,7 +13,7 @@ class StartupResult:
     base_contract: SourceRecord | None
     role_contract: SourceRecord | None
     resolved_role: str | None
-    topic_context: list[SourceRecord]
+    purpose_context: list[SourceRecord]
     decisions: list[SourceRecord]
     continuity: list[SourceRecord]
     sources_consulted: list[SourceRecord]
@@ -22,7 +22,7 @@ class StartupResult:
     write_authority: bool
 
 
-def run_startup(provider: SourceProvider, topic: str, role_hint: str | None) -> StartupResult:
+def run_startup(provider: SourceProvider, purpose: str, role_hint: str | None) -> StartupResult:
     """The deterministic startup procedure (brief §4, steps 1-9), executed against whatever
     SourceProvider is supplied (fixture in Phase 2, live Drive in Phase 3)."""
     manifest = provider.get_manifest()
@@ -56,14 +56,14 @@ def run_startup(provider: SourceProvider, topic: str, role_hint: str | None) -> 
     # 3. Identify applicable Base and role contracts.
     base_contract = fetch(manifest["base_contract_source_id"])
 
-    resolved_role = manifest.get("role_for_topic", {}).get(topic)
+    resolved_role = manifest.get("role_for_purpose", {}).get(purpose)
     if role_hint and resolved_role and role_hint != resolved_role:
         warnings.append(
             f"role hint '{role_hint}' does not match canonically resolved role "
-            f"'{resolved_role}' for topic '{topic}'; using the resolved role, not the hint"
+            f"'{resolved_role}' for purpose '{purpose}'; using the resolved role, not the hint"
         )
     elif not resolved_role:
-        warnings.append(f"no canonical role mapping found for topic '{topic}'")
+        warnings.append(f"no canonical role mapping found for purpose '{purpose}'")
         degraded = True
 
     role_contract = None
@@ -92,12 +92,12 @@ def run_startup(provider: SourceProvider, topic: str, role_hint: str | None) -> 
                     f"'{other_id}'"
                 )
 
-    # 6. Retrieve topic-specific Brain knowledge.
-    topic_source_ids = manifest.get("topic_source_ids", {}).get(topic, [])
-    if not topic_source_ids:
-        warnings.append(f"no topic-specific knowledge indexed for topic '{topic}'")
+    # 6. Retrieve purpose-specific Brain knowledge.
+    purpose_source_ids = manifest.get("purpose_source_ids", {}).get(purpose, [])
+    if not purpose_source_ids:
+        warnings.append(f"no purpose-specific knowledge indexed for purpose '{purpose}'")
         degraded = True
-    topic_context = [r for sid in topic_source_ids if (r := fetch(sid)) is not None]
+    purpose_context = [r for sid in purpose_source_ids if (r := fetch(sid)) is not None]
 
     # 7. Include relevant decisions, history and continuity.
     decisions = [r for sid in manifest.get("decision_source_ids", []) if (r := fetch(sid)) is not None]
@@ -127,7 +127,7 @@ def run_startup(provider: SourceProvider, topic: str, role_hint: str | None) -> 
         base_contract=base_contract,
         role_contract=role_contract,
         resolved_role=resolved_role,
-        topic_context=topic_context,
+        purpose_context=purpose_context,
         decisions=decisions,
         continuity=continuity,
         sources_consulted=sources_consulted,

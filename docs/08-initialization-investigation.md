@@ -8,6 +8,13 @@ from **empirical client behavior** (true only if observed in a real client). **T
 no GUI and no Claude Desktop or ChatGPT Desktop binary available to it** — the empirical items
 below are explicitly marked UNTESTED and describe what a human needs to run locally, not a result.
 
+**Naming note (added after Round 4):** the tool's `topic` parameter was renamed to `purpose`
+(field name, log messages, fixture keys, and the `topic_context`/`grounding.topic_context`
+bundle field, now `purpose_context`). Everything below written since the rename uses `purpose`.
+The raw log-line quotes from Rounds 2–4, and the quoted local-check output in §0.7, are
+reproduced verbatim as they were actually captured — they still say `topic=` / `topic_context`
+because that was the field name in effect at the time, not a transcription inconsistency.
+
 ## 0. Implementation changes made (bounded, per handover §10 steps 1-4)
 
 1. Inspected `src/startup_mcp/server.py`: server-level `instructions` were already present
@@ -19,7 +26,7 @@ below are explicitly marked UNTESTED and describe what a human needs to run loca
    different task within the same conversation. No canonical authority, role designation, or
    governance logic was touched — this is wording only.
 3. Added stderr logging (`logging` module, `STARTUP_MCP_LOG_LEVEL` env var, default `INFO`) at:
-   process start (pid, fixture root, budget), each `startup` tool invocation (topic, role hint),
+   process start (pid, fixture root, budget), each `startup` tool invocation (purpose, role hint),
    and each tool return (status, counts of unresolved/warnings). stdout is left untouched since
    it's reserved for the MCP JSON-RPC stream over stdio. This exists purely so a human running
    the handover §4 experiment has a timestamped, inspectable record of exactly when the process
@@ -93,7 +100,7 @@ prompt ("let's do devotions today" or similar) without mentioning Startup MCP.
 ## 0.6. Round 2 empirical results — explicit user-triggered call (31 Oct 2026)
 
 Same machine/install as §0.5, same log file. The user opened a new conversation and typed an
-explicit instruction naming the tool/action directly (e.g. "call the startup tool with topic
+explicit instruction naming the tool/action directly (e.g. "call the startup tool with purpose
 devotions", or a question-phrased variant — which exact phrasing produced which call line below
 wasn't separately recorded).
 
@@ -123,11 +130,11 @@ session noted that if the question-phrased variant was used at all, it also succ
 phrasing doesn't appear to block it, but this wasn't controlled rigorously), and what the model
 said back to the user in either case.
 
-## 0.7. Round 3 empirical results — topic routing through the real Desktop path (31 Oct 2026)
+## 0.7. Round 3 empirical results — purpose routing through the real Desktop path (31 Oct 2026)
 
-After adding the `devotionals` and `librarian` topics (see the fixture changes in this branch's
+After adding the `devotionals` and `librarian` purposes (see the fixture changes in this branch's
 later commits), a different Remote Control session on the same Windows machine re-ran the test
-with three explicit calls, each naming a different topic:
+with three explicit calls, each naming a different purpose:
 
 ```
 22:22:21,666 startup tool invoked: topic='devotionals' role_hint=None
@@ -139,16 +146,18 @@ with three explicit calls, each naming a different topic:
 ```
 
 **Directly observed through the real Desktop path:** all three statuses matched expectation —
-`devotionals` and `librarian` both READY, the made-up topic DEGRADED with 2 warnings (no topic
-mapping, no role mapping). Topic-based routing to the correct status is confirmed live, not just
-in `pytest`.
+`devotionals` and `librarian` both READY, the made-up purpose DEGRADED with 2 warnings (no
+purpose mapping, no role mapping). Purpose-based routing to the correct status is confirmed live,
+not just in `pytest`.
 
 **Not directly observed through the Desktop path, only inferred:** the server's own log records
 status and counts, not the actual returned content. The reporting session separately ran
 `startup()` locally, against the same fixture, and got the expected content (`devotionals` →
 "this is devotional topic" / role `chaplain`; `librarian` → "this is librarian" / role
-`librarian`; the made-up topic → `role_contract: null`, empty `topic_context`) — but that's a
-local check standing in for the Desktop-path content, not a capture of what Desktop itself
+`librarian`; the made-up purpose → `role_contract: null`, empty `topic_context`) — quoted
+verbatim as captured at the time, before the `topic`→`purpose` rename (now `purpose_context` /
+"this is devotional purpose") — but that's a local check standing in for the Desktop-path
+content, not a capture of what Desktop itself
 returned to the model. It's a reasonable inference (same server binary, same fixture, and
 `test_determinism_across_identical_calls` already proves identical inputs produce identical
 content) rather than a leap, but it's still an inference, not a direct observation — logged here
@@ -249,16 +258,16 @@ signals alone.** MCP has no message type that signals "a new conversation has be
 task has begun" within an existing connection — the server only ever sees `initialize` (once per
 connection), `tools/list`, and individual tool-call requests, none of which carry a
 conversation- or task-boundary flag. The only way the server can know is if the caller's tool
-call itself conveys it (e.g. a fresh `topic`/`role` argument on each call). This is precisely why
-the tool contract puts `topic` and `role` as **call-time arguments** rather than something
+call itself conveys it (e.g. a fresh `purpose`/`role` argument on each call). This is precisely
+why the tool contract puts `purpose` and `role` as **call-time arguments** rather than something
 resolved once from connection-level state (see `docs/03-tool-contract.md`) — the architecture
 already assumes the server cannot infer task boundaries and requires the caller to state them
 every time.
 
 **Q5. Can the surface provide role context, and how should that context be validated?**
-Already implemented, not just designed: `startup(topic, role)` accepts a caller-supplied role
+Already implemented, not just designed: `startup(purpose, role)` accepts a caller-supplied role
 value; `procedure.py` treats it purely as an advisory hint, resolves the actual applicable role
-from the manifest's canonical `role_for_topic` mapping, and emits a `warnings` entry (without
+from the manifest's canonical `role_for_purpose` mapping, and emits a `warnings` entry (without
 blocking) if the hint and the resolved role disagree — see
 `test_role_hint_is_advisory_only` in `tests/test_server.py`. `permissions.write_authority` is
 hardcoded to `false` regardless of what any source or caller claims (the "defensive floor"
@@ -323,7 +332,7 @@ leaving Q1 open by default.
    is the actual answer to Q2 — not the model's own narration.
 6. Open several more new conversations without restarting the client; compare pids in the log to
    answer Q3.
-7. Within one conversation, introduce a second, different topic partway through; check whether a
+7. Within one conversation, introduce a second, different purpose partway through; check whether a
    second `startup tool invoked` line appears for it (tests whether the model independently
    re-grounds on task change, which Q4 already establishes the *server* cannot force on its own).
 8. Repeat all of the above in ChatGPT Desktop, separately noting whether it accepts this stdio

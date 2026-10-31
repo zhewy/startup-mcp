@@ -29,12 +29,12 @@ def _ledger_entry(record: SourceRecord, mandatory_ids: set[str]) -> dict[str, An
     }
 
 
-def _total_chars(result: StartupResult, topic_context: list, decisions: list, continuity: list) -> int:
+def _total_chars(result: StartupResult, purpose_context: list, decisions: list, continuity: list) -> int:
     total = 0
     for record in (result.bootstrap, result.base_contract, result.role_contract):
         if record is not None:
             total += len(record.content)
-    total += sum(len(r.content) for r in topic_context)
+    total += sum(len(r.content) for r in purpose_context)
     total += sum(len(r.content) for r in decisions)
     total += sum(len(r.content) for r in continuity)
     return total
@@ -43,34 +43,34 @@ def _total_chars(result: StartupResult, topic_context: list, decisions: list, co
 def build_bundle(
     result: StartupResult,
     manifest: dict[str, Any],
-    topic: str,
+    purpose: str,
     role_hint: str | None,
     budget_chars: int,
 ) -> dict[str, Any]:
     mandatory_ids = set(manifest.get("mandatory_source_ids", []))
     warnings = list(result.warnings)
 
-    topic_context = list(result.topic_context)
+    purpose_context = list(result.purpose_context)
     decisions = list(result.decisions)
     continuity = list(result.continuity)
 
     # Context-size budget: drop lowest-priority, least-mandatory content first. Dropped entries
     # stay in the provenance ledger (sources[]) — only their inlined content is removed from the
     # bundle, consistent with "sources consulted" being distinct from "content inlined".
-    while _total_chars(result, topic_context, decisions, continuity) > budget_chars and continuity:
+    while _total_chars(result, purpose_context, decisions, continuity) > budget_chars and continuity:
         dropped = continuity.pop()
         warnings.append(
             f"dropped continuity entry '{dropped.source_id}' to stay within the context budget"
         )
-    while _total_chars(result, topic_context, decisions, continuity) > budget_chars and decisions:
+    while _total_chars(result, purpose_context, decisions, continuity) > budget_chars and decisions:
         dropped = decisions.pop()
         warnings.append(
             f"dropped decision entry '{dropped.source_id}' to stay within the context budget"
         )
-    while _total_chars(result, topic_context, decisions, continuity) > budget_chars and topic_context:
-        dropped = topic_context.pop()
+    while _total_chars(result, purpose_context, decisions, continuity) > budget_chars and purpose_context:
+        dropped = purpose_context.pop()
         warnings.append(
-            f"dropped topic-context entry '{dropped.source_id}' to stay within the context budget"
+            f"dropped purpose-context entry '{dropped.source_id}' to stay within the context budget"
         )
 
     grounding: dict[str, Any] = {
@@ -81,14 +81,14 @@ def build_bundle(
             if result.role_contract
             else None
         ),
-        "topic_context": [_grounding_entry(r) for r in topic_context],
+        "purpose_context": [_grounding_entry(r) for r in purpose_context],
         "decisions": [_grounding_entry(r) for r in decisions],
         "continuity": [_grounding_entry(r) for r in continuity],
     }
 
     return {
         "status": result.status,
-        "request": {"operation": "startup", "topic": topic, "role_hint": role_hint},
+        "request": {"operation": "startup", "purpose": purpose, "role_hint": role_hint},
         "grounding": grounding,
         "sources": [_ledger_entry(r, mandatory_ids) for r in result.sources_consulted],
         "versions": {"canonical_designation_version": result.canonical_version},
@@ -99,7 +99,7 @@ def build_bundle(
             "generated_at": datetime.now(timezone.utc).isoformat(),
             "source_versions": {r.source_id: r.version for r in result.sources_consulted},
             "refresh_hint": (
-                "Call startup again with the same topic if this conversation is continued "
+                "Call startup again with the same purpose if this conversation is continued "
                 "elsewhere or after significant truncation/compaction."
             ),
         },
