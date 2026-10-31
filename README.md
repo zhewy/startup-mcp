@@ -26,6 +26,9 @@ See `docs/` for the full design record:
    whether MCP connection initialization can drive automatic conversation/task startup, what's a
    protocol fact vs. an untested client behavior, and the diagnostic logging added to make the
    untested parts testable by a human with a real desktop client.
+9. [`09-dev-workflow.md`](docs/09-dev-workflow.md) — the cloud-edit → local-pull → live-test loop
+   this project actually uses, and why the Windows machine is a pull-only test target, never an
+   edit target.
 
 ## Current status: Phase 2 — minimal prototype
 
