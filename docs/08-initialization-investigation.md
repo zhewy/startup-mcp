@@ -123,6 +123,41 @@ session noted that if the question-phrased variant was used at all, it also succ
 phrasing doesn't appear to block it, but this wasn't controlled rigorously), and what the model
 said back to the user in either case.
 
+## 0.7. Round 3 empirical results — topic routing through the real Desktop path (31 Oct 2026)
+
+After adding the `devotionals` and `librarian` topics (see the fixture changes in this branch's
+later commits), a different Remote Control session on the same Windows machine re-ran the test
+with three explicit calls, each naming a different topic:
+
+```
+22:22:21,666 startup tool invoked: topic='devotionals' role_hint=None
+22:22:21,667 startup tool returned: topic='devotionals' status=READY unresolved=0 warnings=0
+22:23:09,924 startup tool invoked: topic='librarian' role_hint=None
+22:23:09,926 startup tool returned: topic='librarian' status=READY unresolved=0 warnings=0
+22:23:50,671 startup tool invoked: topic='some-made-up-topic' role_hint=None
+22:23:50,674 startup tool returned: topic='some-made-up-topic' status=DEGRADED unresolved=0 warnings=2
+```
+
+**Directly observed through the real Desktop path:** all three statuses matched expectation —
+`devotionals` and `librarian` both READY, the made-up topic DEGRADED with 2 warnings (no topic
+mapping, no role mapping). Topic-based routing to the correct status is confirmed live, not just
+in `pytest`.
+
+**Not directly observed through the Desktop path, only inferred:** the server's own log records
+status and counts, not the actual returned content. The reporting session separately ran
+`startup()` locally, against the same fixture, and got the expected content (`devotionals` →
+"this is devotional topic" / role `chaplain`; `librarian` → "this is librarian" / role
+`librarian`; the made-up topic → `role_contract: null`, empty `topic_context`) — but that's a
+local check standing in for the Desktop-path content, not a capture of what Desktop itself
+returned to the model. It's a reasonable inference (same server binary, same fixture, and
+`test_determinism_across_identical_calls` already proves identical inputs produce identical
+content) rather than a leap, but it's still an inference, not a direct observation — logged here
+as that distinction, not blurred into "confirmed."
+
+Also noted, unexplained: two server processes started at launch (two pids, ~seconds apart) —
+consistent with the same pattern seen in Round 1 (§0.5), so not a new anomaly, just corroborating
+evidence for the existing "two connections at launch" observation. Not investigated further.
+
 ## 1. Answers to Q1-Q7
 
 **Q1. Does Claude Desktop expose MCP server initialization instructions to the model?**

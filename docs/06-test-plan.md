@@ -75,10 +75,16 @@ pytest
    confirms the Q7 fallback actually works on this client, in direct contrast to Run 1's result
    on the same install.
 
-   Still outstanding: a ChatGPT Desktop run of both rounds, a repeat Claude Desktop run with a
-   controlled instructions-present-vs-removed comparison (to separate Q1 from Q2), and a run that
-   captures the actual chat text (neither run used GUI control, so what the model said is
-   unknown in both cases).
+   **Run 3 (31 Oct 2026, same machine): done — topic routing (`devotionals`, `librarian`, an
+   unmapped topic) confirmed live via explicit calls, all three statuses matched expectation.**
+   See `08-initialization-investigation.md` §0.7. Content itself was only verified by a local
+   check against the same fixture, not captured through the Desktop path directly — that
+   distinction is preserved in §0.7 rather than blurred.
+
+   Still outstanding: a ChatGPT Desktop run of all three rounds, a repeat Claude Desktop run with
+   a controlled instructions-present-vs-removed comparison (to separate Q1 from Q2), and a run
+   that captures the actual chat text (none of the three runs used GUI control, so what the
+   model said is unknown in all three).
 
 ## Exit criteria for each phase
 
