@@ -98,10 +98,11 @@ streams:
   the host of those sessions). Its own MCP config mechanism (`.mcp.json` / `claude mcp add`) is
   separate from `claude_desktop_config.json`. No new install needed to test this — it's already
   present on kofimule.
-- **Codex CLI** (OpenAI) — not yet confirmed installed anywhere we've touched. Needs a check
-  (and, if absent, an install) on whichever machine runs this test, before anything else. Its MCP
-  config mechanism is separate again from both Claude's and from ChatGPT Desktop's Developer
-  Mode settings covered in `01-feasibility.md`.
+- **Codex CLI** (OpenAI) — **confirmed installed on kofimule** (31 Oct 2026): `codex-cli 0.166.0`
+  at `/home/arty/.local/bin/codex`, installed globally via npm (`@openai/codex@0.166.0`). No
+  install step needed on that machine. Its MCP config mechanism is separate again from both
+  Claude's and from ChatGPT Desktop's Developer Mode settings covered in `01-feasibility.md` —
+  not yet checked what that mechanism actually is on this install.
 
 **The same non-equivalence applies to both, for the same reason:** a CLI coding agent is a
 different host application from its vendor's consumer chat app — different system prompt,
