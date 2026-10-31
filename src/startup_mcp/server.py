@@ -86,10 +86,11 @@ logger.info(
 
 @mcp.tool(name="startup", description=TOOL_DESCRIPTION)
 def startup(topic: str, role: str | None = None) -> dict[str, Any]:
-    logger.info("startup tool invoked: topic=%r role_hint=%r", topic, role)
+    logger.info("startup tool invoked: pid=%s topic=%r role_hint=%r", os.getpid(), topic, role)
     response = handle_startup(_provider, _config, topic, role)
     logger.info(
-        "startup tool returned: topic=%r status=%s unresolved=%d warnings=%d",
+        "startup tool returned: pid=%s topic=%r status=%s unresolved=%d warnings=%d",
+        os.getpid(),
         topic,
         response["status"],
         len(response["unresolved"]),
@@ -99,7 +100,7 @@ def startup(topic: str, role: str | None = None) -> dict[str, Any]:
 
 
 def main() -> None:
-    logger.info("startup-mcp entering stdio serve loop")
+    logger.info("startup-mcp entering stdio serve loop: pid=%s", os.getpid())
     mcp.run(transport="stdio")
 
 

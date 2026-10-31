@@ -156,7 +156,39 @@ as that distinction, not blurred into "confirmed."
 
 Also noted, unexplained: two server processes started at launch (two pids, ~seconds apart) —
 consistent with the same pattern seen in Round 1 (§0.5), so not a new anomaly, just corroborating
-evidence for the existing "two connections at launch" observation. Not investigated further.
+evidence for the existing "two connections at launch" observation. Investigated further in §0.8.
+
+## 0.8. Investigation — the two-process-at-launch anomaly (31 Oct 2026)
+
+Ruled out, with direct evidence (read-only checks, no config or code changes made on the remote
+machine for this part):
+
+- **Not a duplicate config entry.** The real `claude_desktop_config.json`'s `mcpServers` object
+  has exactly one `startup-mcp` key. Only one server is configured.
+- **Not two separate logical connections from the client's own point of view.** `main.log` shows
+  exactly one `Launching MCP Server: startup-mcp` and one `Connected to startup-mcp (1 tools)`
+  line for this launch (an `[localMcpBridge] announcing startup-mcp` line appeared twice, cause
+  unknown — not necessarily related).
+- **Not a probe-then-retry pattern.** Neither process exited. Both `python -m startup_mcp.server`
+  processes (pids 23960 and 4672 in this run, ~4 seconds apart — 22:21:22 and 22:21:26) stayed
+  alive indefinitely under the same parent, confirmed to be the single running `Claude.exe`
+  instance (`Claude_4.4212.0.0_x64__pzs8sxrjxfjjc`), not a helper, updater, or second window.
+
+**What the evidence suggests, without yet being conclusive:** only one `initialize` request was
+logged server-side, and its timing lines up closely with the *second* process (pid 4672)
+entering its serve loop (22:21:29,144) and the reply going out (22:21:29,245) — while the first
+process (pid 23960) entered its own serve loop earlier (22:21:26,796) and logged no further
+activity afterward. This is suggestive that the client spawns a process, abandons it without
+ever writing to its stdin (so it just sits blocked in its stdio read loop forever, which matches
+"never exits"), and spawns a second one that it actually talks to — but this is inference from
+timing, not confirmed, because **the `startup tool invoked`/`returned` log lines didn't originally
+record which process handled them.**
+
+**Fix applied:** `server.py` now includes `pid=%s` (via `os.getpid()`) in the `startup tool
+invoked` and `startup tool returned` log lines (previously only the process-start line had it).
+The next live test that triggers a `startup` call will show, definitively, which of the two pids
+actually serves requests — closing this open question with direct evidence instead of timing
+inference.
 
 ## 1. Answers to Q1-Q7
 
