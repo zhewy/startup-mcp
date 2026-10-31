@@ -58,6 +58,14 @@ pytest
 7. Simulate an unreachable mandatory source (e.g. revoke the OAuth token, or point config at a
    nonexistent fixture) and confirm the tool returns `BLOCKED`, never a silently-degraded `READY`.
 
+## F. Automatic invocation via MCP initialization (see `08-initialization-investigation.md`)
+
+8. Run the instrumented experiment in `08-initialization-investigation.md` §3 against a real
+   Claude Desktop (and, separately, ChatGPT Desktop) install: confirm the process-start log line
+   appears, then confirm whether a `startup tool invoked` line appears in an unprompted new
+   conversation. This supersedes §C above with actual log evidence rather than relying on the
+   model's own account of whether it called the tool.
+
 ## Exit criteria for each phase
 
 - **Phase 1 closed** when A1–A3 (manual) are each answered with evidence (a screenshot/log, not

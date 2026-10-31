@@ -66,3 +66,12 @@ Confirm, for each client:
   unprompted at the start of a fresh conversation, versus needing an explicit user instruction?
 
 These are empirical questions this document cannot answer from investigation alone.
+
+## Update, 31 Oct 2026
+
+The three lifecycle events this document was conflating — connection initialization, conversation
+startup, and task startup — are now disentangled explicitly, with answers to Q1-Q7 from the
+follow-up handover, in `08-initialization-investigation.md`. Notably: MCP has no protocol
+primitive for "new conversation" or "new task" at all, so the server can never detect either on
+its own — this is a confident architectural finding, not an open question, and it's why `topic`/
+`role` are call-time tool arguments rather than connection-level state.

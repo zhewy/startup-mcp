@@ -22,6 +22,10 @@ See `docs/` for the full design record:
    human needs to run against real desktop clients.
 7. [`07-decisions-needed.md`](docs/07-decisions-needed.md) — open items that need explicit user
    sign-off before Phase 3 (live Brain integration) proceeds.
+8. [`08-initialization-investigation.md`](docs/08-initialization-investigation.md) — findings on
+   whether MCP connection initialization can drive automatic conversation/task startup, what's a
+   protocol fact vs. an untested client behavior, and the diagnostic logging added to make the
+   untested parts testable by a human with a real desktop client.
 
 ## Current status: Phase 2 — minimal prototype
 
