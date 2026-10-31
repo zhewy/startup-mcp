@@ -90,6 +90,39 @@ prompt ("let's do devotions today" or similar) without mentioning Startup MCP.
   user-triggerable action. This doesn't confirm the UI surfaces it as a slash command — only that
   the client isn't ignoring the capability outright.
 
+## 0.6. Round 2 empirical results — explicit user-triggered call (31 Oct 2026)
+
+Same machine/install as §0.5, same log file. The user opened a new conversation and typed an
+explicit instruction naming the tool/action directly (e.g. "call the startup tool with topic
+devotions", or a question-phrased variant — which exact phrasing produced which call line below
+wasn't separately recorded).
+
+```
+2026-10-31 20:38:52,984 startup-mcp INFO startup tool invoked: topic='devotions' role_hint=None
+2026-10-31 20:38:53,022 startup-mcp INFO startup tool returned: topic='devotions' status=READY unresolved=0 warnings=0
+2026-10-31 20:39:05,355 startup-mcp INFO startup tool invoked: topic='devotions' role_hint=None
+2026-10-31 20:39:05,356 startup-mcp INFO startup tool returned: topic='devotions' status=READY unresolved=0 warnings=0
+```
+
+**Q7 is now confirmed empirically, not just by design: an explicit, literal user instruction does
+get Claude Desktop 4.4212.0 to call `startup`, twice in a row, both returning READY.** This is the
+one invocation path tested so far, on this client, that actually produced a `tools/call`. It
+stands in direct contrast to Round 1 (§0.5), where the same client, same install, same server,
+produced zero calls across 3 unprompted conversations — the only variable that changed was the
+explicitness of the user's instruction.
+
+One correction to §0.5's assumption: **`main.log` does not log individual `tools/call` entries at
+all** — it only recorded the connection-level handshake and had nothing new since the initial
+connection, even though two real tool calls happened in between. The server's own log
+(`mcp-server-startup-mcp.log`) is the only place these calls are actually visible; don't rely on
+`main.log` for call-level evidence.
+
+Still not established from this round: whether both calls came from the same chat or two
+different ones, which exact phrasing (command vs. question) produced which call (the reporting
+session noted that if the question-phrased variant was used at all, it also succeeded — so
+phrasing doesn't appear to block it, but this wasn't controlled rigorously), and what the model
+said back to the user in either case.
+
 ## 1. Answers to Q1-Q7
 
 **Q1. Does Claude Desktop expose MCP server initialization instructions to the model?**
@@ -157,23 +190,31 @@ something *this server* could add and still remain in scope.
 
 **Q7. If automatic startup is unavailable, what is the smallest dependable user-triggered
 alternative?**
-Already available today, with no further implementation needed: a short, literal user phrase
-("Startup MCP — initialise devotions," or the handover's own example) leaves the model little
-room to skip the call, because it only depends on the tool's `description`/schema being visible
-at `tools/list` time — a channel that, unlike `instructions`, the client must expose for
-tool-calling to function at all (see the earlier distinction drawn in
-`docs/05-invocation-reliability.md`). This remains the one invocation path with no open
-"is this surfaced at all" question attached to it.
+**Confirmed empirically (§0.6), not just by design.** A short, literal user phrase ("Startup
+MCP — initialise devotions," or the handover's own example) actually produced two `tools/call`
+hits on the real client, both returning READY — in direct contrast to Round 1's zero hits across
+3 unprompted conversations on the same install. It works because it only depends on the tool's
+`description`/schema being visible at `tools/list` time — a channel that, unlike `instructions`,
+the client must expose for tool-calling to function at all (see the earlier distinction drawn in
+`docs/05-invocation-reliability.md`). This is now the one invocation path with both a design
+rationale and a real log showing it worked.
 
 ## 2. Recommendation
 
-Keep the explicit user-triggered call (Q7) as the dependable baseline now. Treat automatic
-invocation via `instructions` (Q1/Q2) as a hypothesis the implementation now supports testing,
-not a shipped feature — don't represent it to the user as working until a human runs the
-handover §4 steps against a real Claude Desktop (and, separately, ChatGPT Desktop) install and
-reports what the stderr log and the client's own MCP logs actually show. Do not treat a model's
-own claim of having "initialized" or "checked startup" as evidence either way, per the
-handover's own caution.
+**Updated after Rounds 1 and 2:** keep the explicit user-triggered call (Q7) as the dependable
+path — it's no longer just a design assumption, it's now the only invocation path with a real
+log showing it worked, twice, on a real client. Continue to treat automatic invocation via
+`instructions` (Q1/Q2) as not working, on the one client/version tested so far — represent that to
+the user as a tested negative, not an open hypothesis. Do not treat a model's own claim of having
+"initialized" or "checked startup" as evidence either way, per the handover's own caution; the
+server log remains the only trustworthy evidence, and `main.log` turned out not to log call-level
+detail at all (§0.6), so don't rely on it for that purpose either.
+
+Next worth testing, in priority order: (1) a ChatGPT Desktop run of both rounds, since nothing
+here generalizes across clients; (2) the MCP `prompts` capability (`docs/07-decisions-needed.md`
+item 6), now that §0.5 confirmed Claude Desktop at least calls `prompts/list` on connect; (3) a
+controlled instructions-present-vs-removed comparison, to finally separate Q1 from Q2 rather than
+leaving Q1 open by default.
 
 ## 3. What a human needs to do next (mirrors handover §4, now instrumented)
 
