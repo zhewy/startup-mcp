@@ -66,6 +66,9 @@ pip install -e ".[dev]"
 pytest
 ```
 
+On Windows, the default pytest temp directory can hit a `PermissionError` depending on the
+machine — if so, use `pytest --basetemp=.pytest-tmp` instead.
+
 Run the server directly over stdio (for manual MCP client testing):
 
 ```bash
@@ -75,11 +78,21 @@ python3 -m startup_mcp.server
 ## Wiring into Claude Desktop
 
 Add an entry like `examples/claude_desktop_config.json` to your `claude_desktop_config.json`
-(macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`; Windows:
-`%APPDATA%\Claude\claude_desktop_config.json`), pointing `STARTUP_MCP_FIXTURE_ROOT` at an absolute
-path if you don't want the bundled default fixture, then restart Claude Desktop. The
-`STARTUP_MCP_*` environment variables are optional — omit them to use the bundled fixture and a
-20,000-character context budget.
+(macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`; Windows: **not
+reliably `%APPDATA%\Claude\claude_desktop_config.json`** — on a Windows 10/11 machine tested 31
+Oct 2026 (Claude Desktop 4.4212.0) the real path was
+`%LOCALAPPDATA%\Claude-Data\claude_<per-install-id>\claude_desktop_config.json`, a randomly
+per-install-suffixed directory under `Local\Claude-Data`. Search under `%LOCALAPPDATA%` for
+`claude_desktop_config.json` rather than assuming the path on Windows), pointing
+`STARTUP_MCP_FIXTURE_ROOT` at an absolute path if you don't want the bundled default fixture,
+then restart Claude Desktop. The `STARTUP_MCP_*` environment variables are optional — omit them
+to use the bundled fixture and a 20,000-character context budget. On Windows, `"command":
+"python3"` in the example config may need to be `"python"` instead — check which resolves on
+your machine.
+
+MCP server logs on Windows land in `%LOCALAPPDATA%\Claude\logs\` — this server's own stderr
+diagnostics appear in `mcp-server-startup-mcp.log`, while the client's own connection-level log
+(showing the actual `initialize`/`tools/list`/`tools/call` traffic) is `main.log`.
 
 **ChatGPT Desktop wiring is not yet validated** — see `docs/01-feasibility.md` §1 and
 `docs/06-test-plan.md` §B2. Confirm stdio support there before assuming this config pattern

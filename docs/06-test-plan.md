@@ -66,6 +66,13 @@ pytest
    conversation. This supersedes §C above with actual log evidence rather than relying on the
    model's own account of whether it called the tool.
 
+   **Run 1 (31 Oct 2026, Windows, Claude Desktop 4.4212.0): done — result was no automatic
+   invocation across 3 fresh conversations.** See `08-initialization-investigation.md` §0.5 for
+   the full evidence. Still outstanding: a ChatGPT Desktop run, a repeat run on Claude Desktop
+   with a controlled instructions-present-vs-removed comparison (to separate Q1 from Q2), and a
+   run that captures the actual chat text (this run used no GUI control, so what the model said
+   in those 3 chats is unknown).
+
 ## Exit criteria for each phase
 
 - **Phase 1 closed** when A1–A3 (manual) are each answered with evidence (a screenshot/log, not

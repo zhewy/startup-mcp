@@ -28,34 +28,93 @@ below are explicitly marked UNTESTED and describe what a human needs to run loca
 4. No renaming, caching, or `prompts` implementation was added — those remain open decisions
    (see §6-7 below and `docs/07-decisions-needed.md`), per "avoid unnecessary redesign."
 
+## 0.5. Round 1 empirical results — Windows, Claude Desktop 4.4212.0 (31 Oct 2026)
+
+A human ran the handover §4 / this doc's §3 experiment for real, via a Remote Control bridge
+session on the machine where Claude Desktop actually runs. Raw findings, not narration:
+
+**Setup notes, worth keeping for future runs:**
+- Repo cloned to `D:\z\Downloads\mcptest\startup-mcp`; `pip install -e ".[dev]"` succeeded as-is.
+- Plain `pytest` failed with a `PermissionError` on `%TEMP%` on this machine; passing `--basetemp`
+  pointed at a writable folder fixed it (all 9 tests passed). Not a bug in this repo — a Windows
+  temp-directory permission quirk on that machine — but worth doing by default on Windows:
+  `pytest --basetemp=.pytest-tmp`.
+- **The real `claude_desktop_config.json` location was not the documented path.** It was at
+  `C:\Users\<user>\AppData\Local\Claude-Data\claude_<install-id>\claude_desktop_config.json` — a
+  per-install, randomly-suffixed directory under `Local\Claude-Data`, not
+  `%APPDATA%\Claude\claude_desktop_config.json` as `README.md` and
+  `examples/claude_desktop_config.json` currently say. **The documented path should be treated as
+  unreliable on Windows; search for `claude_desktop_config.json` under `%LOCALAPPDATA%` rather
+  than assuming the path.**
+- MCP server logs land in `C:\Users\<user>\AppData\Local\Claude\logs\`, split across
+  `mcp-server-startup-mcp.log` (this server's own stdout/stderr, i.e. our diagnostic logging) and
+  `main.log` (the client's own connection-level log, which is where the actual MCP protocol
+  method calls are visible).
+
+**What `main.log` shows about the handshake (this is the first real evidence of what the client
+actually does, not just what the spec allows):** on connecting, Claude Desktop called
+`initialize`, `notifications/initialized`, `tools/list`, `prompts/list`, and `resources/list` —
+confirming it probes for prompts and resources capabilities even though this server registers
+neither. Logged as "Connected to startup-mcp (1 tools); negotiated protocol 2025-11-25."
+
+**What `mcp-server-startup-mcp.log` (our own log) shows:** two `startup-mcp process starting`
+lines ~1 second apart (pid 24404, then pid 25692), both under the same parent process (pid 3016)
+— read as two connections/handshakes at launch, not one. **No `startup tool invoked` line, and
+no `tools/call` of any kind, appears anywhere in the log** — checked ~5 minutes after the last
+process-start line, after the user had run 3 ordinary new conversations using a devotions-style
+prompt ("let's do devotions today" or similar) without mentioning Startup MCP.
+
+**Answer, as far as this round goes:**
+- **Q2 is answered, empirically, for this client/version/test: NO — Claude Desktop 4.4212.0 did
+  not call `startup` automatically across 3 fresh conversations in this test.** This isn't
+  narration-dependent: the log would show a `tools/call` line if it had happened, and it doesn't,
+  regardless of what the model said in the chats (which wasn't observed — no GUI control was
+  used, so the chats' text is unknown).
+- **Q1 is still not fully separable from Q2 by this test.** A "no" on Q2 is consistent with
+  either "the client never surfaced `instructions` to the model" or "it surfaced them and the
+  model still chose not to call the tool" — this test can't distinguish those. Confirming Q1
+  specifically would need inspecting what context the client actually sends the model (not
+  available from server-side logs), or a controlled comparison with `instructions` present vs.
+  removed.
+- **Q3 (shared connection across conversations) has supporting evidence, not full proof:** no new
+  process-start line appeared after the initial one across the 3 subsequent conversations,
+  consistent with one shared connection/process serving all of them. Exact timestamp correlation
+  between each of the 3 chats and the connection log wasn't established (the log was checked once,
+  after the fact, not per-chat).
+- **Q4, Q5, Q7 are unaffected** by this round — they were answered from protocol architecture
+  and existing implementation already (see below), not from this test.
+- **Q6 got one new, useful data point:** `main.log` confirms Claude Desktop calls `prompts/list`
+  on connect — so if this server implements the proposed MCP `prompts` capability
+  (`docs/07-decisions-needed.md` item 6), the client is at least enumerating prompts at connection
+  time, which is a necessary (not sufficient) precondition for it to surface one as a
+  user-triggerable action. This doesn't confirm the UI surfaces it as a slash command — only that
+  the client isn't ignoring the capability outright.
+
 ## 1. Answers to Q1-Q7
 
 **Q1. Does Claude Desktop expose MCP server initialization instructions to the model?**
-UNTESTED. Cannot be determined without a running Claude Desktop instance. What's confirmed at
-the protocol level: the `instructions` field exists in the `InitializeResult` and is now
-populated (§0.2). Whether Claude Desktop reads it and folds it into the model's context, versus
-just logging or displaying it, is unverified — see `docs/01-feasibility.md` and
-`docs/05-invocation-reliability.md`, which already flagged this as an open gap before this
-handover.
+Still not directly confirmed — see §0.5's caveat: the Round 1 result (no automatic call) is
+consistent with "not surfaced" but doesn't rule out "surfaced but the model didn't act on it."
+What's confirmed at the protocol level: the `instructions` field exists in the `InitializeResult`
+and is now populated (§0.2), and `main.log` from Round 1 confirms the real client completes the
+handshake (`initialize`, `tools/list`, `prompts/list`, `resources/list`) — but server-side logs
+can't show what the client does with the `instructions` string after reading it. Still open.
 
 **Q2. Can those instructions cause the model to invoke `startup` automatically in a new
 conversation?**
-UNTESTED, for the same reason, and logically downstream of Q1 — if the client doesn't surface
-`instructions` to the model at all, this can't be true regardless of wording quality. The server
-now advertises the capability per handover §3's illustrative text; whether that advertisement
-*causes* invocation is exactly what the local experiment in handover §4 needs to establish. This
-implementation cannot be marked complete until that test runs.
+**Tested once, on Windows / Claude Desktop 4.4212.0(§0.5): no.** Across 3 fresh conversations
+using a devotions-style prompt, with no mention of Startup MCP, no `tools/call` to `startup`
+appeared in the log. This is one data point on one client version, not a general proof for every
+client/version — but it's a real negative result, not an absence of testing. Worth re-running on
+ChatGPT Desktop and on a later Claude Desktop version before generalizing.
 
 **Q3. What happens when multiple conversations share an already-established MCP connection?**
-Mostly UNTESTED, with one protocol-level fact available: the MCP spec itself does not mandate
-any particular mapping between "connection" and "conversation" — a client is free to reuse one
-long-lived connection across many conversations, or open a fresh connection per conversation.
-Nothing in the spec requires a new `initialize` handshake per conversation. Whether Claude
-Desktop or ChatGPT Desktop spawn one server process per app session (shared across chats) or one
-per conversation is implementation-specific and not something this session can observe. The
-added process-start log line (§0.3) gives a human a concrete signal: if the pid and start
-timestamp stay constant across several new chats, the connection/process is shared; if a fresh
-log line appears per chat, it isn't.
+Partially tested (§0.5): no new server-process-start line appeared across the 3 conversations
+after the initial connection, consistent with one shared connection serving all of them — but
+exact per-chat timestamp correlation wasn't captured, so this is supporting evidence, not proof.
+Protocol-level fact underneath it: the MCP spec itself does not mandate any particular mapping
+between "connection" and "conversation" — nothing requires a new `initialize` handshake per
+conversation, so a client is free to do either.
 
 **Q4. Can the client distinguish a new conversation from a new task for startup purposes?**
 This one has a confident, protocol-grounded (not empirical) answer: **no, not from MCP protocol
