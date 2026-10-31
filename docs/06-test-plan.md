@@ -86,6 +86,41 @@ pytest
    that captures the actual chat text (none of the three runs used GUI control, so what the
    model said is unknown in all three).
 
+## G. CLI agent clients — new scope, beyond the brief's two named clients
+
+The handover brief named exactly two targets: ChatGPT Desktop and Claude Desktop — consumer chat
+GUI apps. This section tracks a deliberate scope addition: testing Startup MCP against **CLI
+coding-agent tools** instead, which are separate products from their respective companies'
+consumer chat apps, not alternate skins on the same one. Two parallel, independently-tracked
+streams:
+
+- **Claude Code CLI** — already running on every Remote Control bridge session used so far (it's
+  the host of those sessions). Its own MCP config mechanism (`.mcp.json` / `claude mcp add`) is
+  separate from `claude_desktop_config.json`. No new install needed to test this — it's already
+  present on kofimule.
+- **Codex CLI** (OpenAI) — not yet confirmed installed anywhere we've touched. Needs a check
+  (and, if absent, an install) on whichever machine runs this test, before anything else. Its MCP
+  config mechanism is separate again from both Claude's and from ChatGPT Desktop's Developer
+  Mode settings covered in `01-feasibility.md`.
+
+**The same non-equivalence applies to both, for the same reason:** a CLI coding agent is a
+different host application from its vendor's consumer chat app — different system prompt,
+different default disposition toward calling available tools (a tool-execution agent is
+plausibly *more* eager to call tools than a conversational chat surface), different permission
+machinery (Claude Code CLI's own "auto mode classifier," seen blocking actions in earlier bridge
+sessions, has no equivalent in Desktop chat). A result from Claude Code CLI or Codex CLI answers
+"does *this CLI tool's* host behavior invoke `startup` automatically" — a real, useful, distinct
+data point — but does **not** stand in for, or get averaged with, the Claude Desktop / ChatGPT
+Desktop findings already in `08-initialization-investigation.md`. Each gets its own row in that
+doc's results, clearly labeled by which specific tool produced it.
+
+**Bias risk specific to CLI testing, same discipline as the Desktop tests:** don't ask a bridge
+session "would you call startup" directly — that primes it. Give it an ordinary task and observe
+whether it reaches for the tool unprompted, same as the "let's do devotions today" framing used
+for Desktop.
+
+Status: tracked, not yet run. Both streams are open.
+
 ## Exit criteria for each phase
 
 - **Phase 1 closed** when A1–A3 (manual) are each answered with evidence (a screenshot/log, not
