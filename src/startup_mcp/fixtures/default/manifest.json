@@ -3,10 +3,13 @@
   "bootstrap_source_id": "bootstrap",
   "base_contract_source_id": "base_contract",
   "role_for_topic": {
-    "devotions": "chaplain"
+    "devotions": "chaplain",
+    "devotionals": "chaplain",
+    "librarian": "librarian"
   },
   "role_contract_source_ids": {
-    "chaplain": "role_contract_chaplain"
+    "chaplain": "role_contract_chaplain",
+    "librarian": "role_contract_librarian"
   },
   "mandatory_source_ids": [
     "bootstrap",
@@ -16,6 +19,12 @@
   "topic_source_ids": {
     "devotions": [
       "topic_devotions"
+    ],
+    "devotionals": [
+      "topic_devotionals"
+    ],
+    "librarian": [
+      "topic_librarian"
     ]
   },
   "decision_source_ids": [

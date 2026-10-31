@@ -1,0 +1,8 @@
+{
+  "id": "role_contract_librarian",
+  "title": "Librarian Role Contract (fixture stand-in)",
+  "version": "v1",
+  "fetched_at": "2026-10-31T00:00:00+00:00",
+  "mandatory": false,
+  "content": "FIXTURE CONTENT (Phase 2 — not live Brain data). This stands in for the role contract that governs the 'librarian' role, which the current canonical designations map to the 'librarian' topic."
+}

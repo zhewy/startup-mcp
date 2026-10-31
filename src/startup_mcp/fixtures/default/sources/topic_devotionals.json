@@ -1,0 +1,8 @@
+{
+  "id": "topic_devotionals",
+  "title": "Devotionals — Topic Knowledge (fixture stand-in)",
+  "version": "v1",
+  "fetched_at": "2026-10-31T00:00:00+00:00",
+  "mandatory": false,
+  "content": "this is devotional topic"
+}

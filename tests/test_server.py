@@ -36,6 +36,39 @@ def test_devotions_topic_produces_relevant_grounding(tmp_path):
     assert result["grounding"]["role_contract"]["resolved_role"] == "chaplain"
 
 
+def test_devotionals_topic_advises_devotional(tmp_path):
+    root = _copy_fixture(tmp_path)
+    result = handle_startup(_provider(root), _config(root), topic="devotionals")
+
+    assert result["status"] == "READY"
+    topic_contents = [entry["content"] for entry in result["grounding"]["topic_context"]]
+    assert "this is devotional topic" in topic_contents
+    assert result["grounding"]["role_contract"]["resolved_role"] == "chaplain"
+
+
+def test_librarian_topic_advises_librarian(tmp_path):
+    root = _copy_fixture(tmp_path)
+    result = handle_startup(_provider(root), _config(root), topic="librarian")
+
+    assert result["status"] == "READY"
+    topic_contents = [entry["content"] for entry in result["grounding"]["topic_context"]]
+    assert "this is librarian" in topic_contents
+    assert result["grounding"]["role_contract"]["resolved_role"] == "librarian"
+
+
+def test_unmapped_topic_does_not_fully_activate(tmp_path):
+    root = _copy_fixture(tmp_path)
+    result = handle_startup(_provider(root), _config(root), topic="some-unmapped-topic")
+
+    # No topic knowledge and no role mapping exist for this topic, so it degrades rather
+    # than silently pretending to be grounded for a topic the fixture knows nothing about.
+    assert result["status"] == "DEGRADED"
+    assert result["grounding"]["topic_context"] == []
+    assert result["grounding"]["role_contract"] is None
+    assert any("no topic-specific knowledge indexed" in w for w in result["warnings"])
+    assert any("no canonical role mapping found" in w for w in result["warnings"])
+
+
 def test_determinism_across_identical_calls(tmp_path):
     root = _copy_fixture(tmp_path)
     provider = _provider(root)
