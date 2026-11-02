@@ -11,10 +11,11 @@ client (manual, one-time per phase).
 | 6 | Identical inputs + source versions → equivalent results | `test_determinism_across_identical_calls`: two calls with the same purpose against the fixture source produce identical `grounding`/`sources`/`versions`/`status`, differing only in `receipt.generated_at`. |
 | 7 | Missing mandatory sources → BLOCKED, not false success | `test_missing_mandatory_source_blocks`: fixture with a mandatory source deleted → `status == "BLOCKED"` and the missing id appears in `unresolved`. |
 | 8 | Source identities and provenance retained | `test_sources_retain_provenance`: every entry in `sources[]` has non-empty `source_id`, `version`, `fetched_at`. |
-| 5 | `devotions` produces relevant purpose grounding | `test_devotions_purpose_produces_relevant_grounding`: `startup(purpose="devotions")` against the fixture returns a `purpose_context` entry sourced from the devotions fixture file, not from an unrelated purpose. |
+| 5 | `devotions` produces relevant purpose grounding | `test_devotions_purpose_produces_relevant_grounding`: `ground(purpose="devotions")` against the fixture returns a `purpose_context` entry sourced from the devotions fixture file, not from an unrelated purpose. |
 | — | Optional material missing → DEGRADED, not BLOCKED | `test_optional_missing_degrades`: fixture with only a non-mandatory continuity entry removed → `status == "DEGRADED"`, mandatory grounding still present, `warnings` names it. |
 | — | Context-size budget enforcement | `test_budget_truncation`: a fixture engineered to exceed a small configured budget → bundle stays within budget, `sources[]` still lists every *consulted* source (budget affects what's inlined under `grounding`, not the provenance ledger), and this is recorded in `warnings`. |
 | — | `role` input is advisory only | `test_role_hint_does_not_grant_authority`: calling with a `role` hint that doesn't match the canonical-resolved role still resolves the role from canonical data, not from the hint, and emits a mismatch warning. |
+| — | `startup()` returns stable, versioned guidance with no retrieval | `test_startup_returns_versioned_guidance` / `test_startup_is_static_and_deterministic`: `startup()` (no args) returns the fixed `STARTUP_PAYLOAD` constant, structurally guaranteed not to touch any `SourceProvider` since the function takes none. |
 
 Run with:
 ```bash
@@ -37,17 +38,31 @@ pytest
 
 ## C. Manual — invocation behavior (per client)
 
+**Naming note:** items 4-5 below predate the `startup`/`ground` tool split and say `startup`
+meaning what is now `ground` (the full retrieval call) — preserved as written, see
+`03-tool-contract.md`'s naming note. Item 4b is the new, two-tool-specific round.
+
 4. Start a fresh conversation in each client with no explicit instruction beyond a task that
    implies needing Brain grounding (e.g. "let's do devotions today"). Record whether the model
-   calls `startup` unprompted, and compare against the same scenario with an explicit instruction
-   ("call the startup tool for purpose devotions first").
+   calls `ground` unprompted, and compare against the same scenario with an explicit instruction
+   ("call the ground tool for purpose devotions first").
+
+4b. **New, 1 Nov 2026 — chained invocation across the split** (see
+    `05-invocation-reliability.md`'s "New open question" section). With both `startup` and
+    `ground` registered: (a) repeat the item-4 unprompted scenario and separately record whether
+    `startup()` gets called unprompted (not yet tested at all — distinct from `ground`'s own
+    history); (b) if it does, or if the model is explicitly told only to call `startup` and
+    nothing else, record whether receiving `startup()`'s `guidance` text then causes an
+    *unprompted* `ground` call, without any further explicit instruction naming `ground`. (b) is
+    the one with the most interesting instrumented theory behind it, don't skip it in favor of
+    (a) alone.
 
 ## D. Manual — Desktop → Web continuity (per provider, after Phase 3 Drive integration exists)
 
-5. Start a conversation in Desktop, call `startup`, receive a READY bundle. Continue the *same*
+5. Start a conversation in Desktop, call `ground`, receive a READY bundle. Continue the *same*
    conversation in that provider's Web app. Ask a question that depends on bundle content (e.g.
    "what does the role contract say about X"). Confirm the Web session can answer from the
-   returned grounding without re-calling `startup`, and separately confirm that after heavy
+   returned grounding without re-calling `ground`, and separately confirm that after heavy
    scrollback/compaction, the model (or user) can use the `receipt` to decide a re-call is needed.
 
 ## E. Manual — negative/safety checks

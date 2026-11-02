@@ -15,6 +15,17 @@ The raw log-line quotes from Rounds 2–4, and the quoted local-check output in 
 reproduced verbatim as they were actually captured — they still say `topic=` / `topic_context`
 because that was the field name in effect at the time, not a transcription inconsistency.
 
+**Naming note (added after the two-tool split, 1 Nov 2026):** the single tool this document
+calls `startup` throughout Rounds 1–5 below has since been renamed `ground`, and a new,
+separate, argument-free tool now uses the name `startup` for something else entirely (a
+lightweight entrypoint that performs no retrieval — see `02-architecture.md`'s "Tool surface"
+section and `03-tool-contract.md`). Every `startup tool invoked`/`startup tool returned` log
+quote below, and every prose reference to "the `startup` tool," predates that rename and refers
+to what is now `ground`. Reproduced verbatim, not retitled, same discipline as the `topic`→
+`purpose` note above — these are historical records of what the log actually said, not a
+description of the current tool surface. A new Round 6+ would be needed to produce equivalent
+evidence for the current, differently-named `startup()` tool; none exists yet.
+
 ## 0. Implementation changes made (bounded, per handover §10 steps 1-4)
 
 1. Inspected `src/startup_mcp/server.py`: server-level `instructions` were already present

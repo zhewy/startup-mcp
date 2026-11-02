@@ -4,7 +4,7 @@ import shutil
 from pathlib import Path
 
 from startup_mcp.config import Config
-from startup_mcp.server import handle_startup
+from startup_mcp.server import STARTUP_PAYLOAD, handle_ground, startup
 from startup_mcp.sources.fixture import FixtureSourceProvider
 
 DEFAULT_FIXTURE_ROOT = (
@@ -28,7 +28,7 @@ def _config(root: Path, budget: int = 100_000) -> Config:
 
 def test_devotions_purpose_produces_relevant_grounding(tmp_path):
     root = _copy_fixture(tmp_path)
-    result = handle_startup(_provider(root), _config(root), purpose="devotions")
+    result = handle_ground(_provider(root), _config(root), purpose="devotions")
 
     assert result["status"] == "READY"
     purpose_ids = {entry["source_id"] for entry in result["grounding"]["purpose_context"]}
@@ -38,7 +38,7 @@ def test_devotions_purpose_produces_relevant_grounding(tmp_path):
 
 def test_devotionals_purpose_advises_devotional(tmp_path):
     root = _copy_fixture(tmp_path)
-    result = handle_startup(_provider(root), _config(root), purpose="devotionals")
+    result = handle_ground(_provider(root), _config(root), purpose="devotionals")
 
     assert result["status"] == "READY"
     purpose_contents = [entry["content"] for entry in result["grounding"]["purpose_context"]]
@@ -48,7 +48,7 @@ def test_devotionals_purpose_advises_devotional(tmp_path):
 
 def test_librarian_purpose_advises_librarian(tmp_path):
     root = _copy_fixture(tmp_path)
-    result = handle_startup(_provider(root), _config(root), purpose="librarian")
+    result = handle_ground(_provider(root), _config(root), purpose="librarian")
 
     assert result["status"] == "READY"
     purpose_contents = [entry["content"] for entry in result["grounding"]["purpose_context"]]
@@ -58,7 +58,7 @@ def test_librarian_purpose_advises_librarian(tmp_path):
 
 def test_unmapped_purpose_does_not_fully_activate(tmp_path):
     root = _copy_fixture(tmp_path)
-    result = handle_startup(_provider(root), _config(root), purpose="some-unmapped-purpose")
+    result = handle_ground(_provider(root), _config(root), purpose="some-unmapped-purpose")
 
     # No purpose knowledge and no role mapping exist for this purpose, so it degrades rather
     # than silently pretending to be grounded for a purpose the fixture knows nothing about.
@@ -74,8 +74,8 @@ def test_determinism_across_identical_calls(tmp_path):
     provider = _provider(root)
     config = _config(root)
 
-    first = handle_startup(provider, config, purpose="devotions")
-    second = handle_startup(provider, config, purpose="devotions")
+    first = handle_ground(provider, config, purpose="devotions")
+    second = handle_ground(provider, config, purpose="devotions")
 
     first_stable = copy.deepcopy(first)
     second_stable = copy.deepcopy(second)
@@ -89,7 +89,7 @@ def test_missing_mandatory_source_blocks(tmp_path):
     root = _copy_fixture(tmp_path)
     (root / "sources" / "base_contract.json").unlink()
 
-    result = handle_startup(_provider(root), _config(root), purpose="devotions")
+    result = handle_ground(_provider(root), _config(root), purpose="devotions")
 
     assert result["status"] == "BLOCKED"
     assert any("base_contract" in item for item in result["unresolved"])
@@ -101,7 +101,7 @@ def test_optional_source_missing_degrades_not_blocks(tmp_path):
     root = _copy_fixture(tmp_path)
     (root / "sources" / "continuity_001.json").unlink()
 
-    result = handle_startup(_provider(root), _config(root), purpose="devotions")
+    result = handle_ground(_provider(root), _config(root), purpose="devotions")
 
     assert result["status"] == "DEGRADED"
     assert result["unresolved"] == []
@@ -110,7 +110,7 @@ def test_optional_source_missing_degrades_not_blocks(tmp_path):
 
 def test_sources_retain_provenance(tmp_path):
     root = _copy_fixture(tmp_path)
-    result = handle_startup(_provider(root), _config(root), purpose="devotions")
+    result = handle_ground(_provider(root), _config(root), purpose="devotions")
 
     assert result["sources"], "expected at least one consulted source"
     for entry in result["sources"]:
@@ -122,7 +122,7 @@ def test_sources_retain_provenance(tmp_path):
 
 def test_role_hint_is_advisory_only(tmp_path):
     root = _copy_fixture(tmp_path)
-    result = handle_startup(
+    result = handle_ground(
         _provider(root), _config(root), purpose="devotions", role="not-the-real-role"
     )
 
@@ -139,7 +139,7 @@ def test_write_authority_floor_overrides_source_data(tmp_path):
     manifest["write_authority"] = True
     manifest_path.write_text(json.dumps(manifest))
 
-    result = handle_startup(_provider(root), _config(root), purpose="devotions")
+    result = handle_ground(_provider(root), _config(root), purpose="devotions")
 
     assert result["permissions"]["write_authority"] is False
     assert any("write_authority" in warning for warning in result["warnings"])
@@ -166,7 +166,7 @@ def test_conflicting_mandatory_sources_block(tmp_path):
         )
     )
 
-    result = handle_startup(_provider(root), _config(root), purpose="devotions")
+    result = handle_ground(_provider(root), _config(root), purpose="devotions")
 
     assert result["status"] == "BLOCKED"
     assert any("conflict" in item.lower() for item in result["unresolved"])
@@ -179,9 +179,28 @@ def test_budget_truncation_drops_lowest_priority_content_first(tmp_path):
     data["content"] = "x" * 10_000
     continuity_path.write_text(json.dumps(data))
 
-    result = handle_startup(_provider(root), _config(root, budget=200), purpose="devotions")
+    result = handle_ground(_provider(root), _config(root, budget=200), purpose="devotions")
 
     assert result["grounding"]["continuity"] == []
     assert any("dropped continuity entry" in warning for warning in result["warnings"])
     # The source is still listed in the provenance ledger even though its content was dropped.
     assert any(entry["source_id"] == "continuity_001" for entry in result["sources"])
+
+
+def test_startup_returns_versioned_guidance():
+    result = startup()
+
+    assert result == STARTUP_PAYLOAD
+    assert result["version"] == "v1"
+    assert "ground" in result["guidance"]
+    assert result["next_action"] == "ground(purpose, role?)"
+
+
+def test_startup_is_static_and_deterministic():
+    # No provider/fixture argument exists on this tool's signature at all — this is the
+    # structural guarantee that it can't retrieve canonical content, not just an observed
+    # behavior.
+    first = startup()
+    second = startup()
+
+    assert first == second

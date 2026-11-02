@@ -88,7 +88,7 @@ def build_bundle(
 
     return {
         "status": result.status,
-        "request": {"operation": "startup", "purpose": purpose, "role_hint": role_hint},
+        "request": {"operation": "ground", "purpose": purpose, "role_hint": role_hint},
         "grounding": grounding,
         "sources": [_ledger_entry(r, mandatory_ids) for r in result.sources_consulted],
         "versions": {"canonical_designation_version": result.canonical_version},
@@ -99,7 +99,7 @@ def build_bundle(
             "generated_at": datetime.now(timezone.utc).isoformat(),
             "source_versions": {r.source_id: r.version for r in result.sources_consulted},
             "refresh_hint": (
-                "Call startup again with the same purpose if this conversation is continued "
+                "Call ground again with the same purpose if this conversation is continued "
                 "elsewhere or after significant truncation/compaction."
             ),
         },

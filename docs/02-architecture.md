@@ -11,7 +11,8 @@ Brain integration). It intentionally does not implement live Google Drive retrie
 
 ```
 startup_mcp/
-  server.py       MCP server entrypoint (stdio transport, FastMCP), registers the `startup` tool
+  server.py       MCP server entrypoint (stdio transport), registers two tools: `startup`
+                   (lightweight entrypoint) and `ground` (deterministic full retrieval)
   bundle.py        Grounding bundle schema (dataclasses) + bundle assembly logic
   procedure.py     The deterministic startup procedure (steps 1-9 from the brief), currently
                    operating against a fixed/local test source set
@@ -59,8 +60,23 @@ unreachable mandatory source is a `BLOCKED` result, full stop.
 
 ## Tool surface
 
-Phase 2 ships exactly one tool: `startup`. See `03-tool-contract.md` for the full contract. No
-other tools (no Brain search, no write operations, no admin) are exposed, per brief §8/§12.
+Phase 2 ships exactly two tools, deliberately split by weight:
+
+- **`startup()`** — no arguments, no `SourceProvider`/fixture access at all. Returns a short,
+  stable, versioned guidance payload (what "Brain" means, when further grounding is needed) baked
+  directly into `server.py`. This is the "embedded instructions" tier — safe to keep in the MCP
+  implementation itself because it carries no canonical content, only routing guidance.
+- **`ground(purpose, role?)`** — the full deterministic retrieval procedure (what this document
+  used to call simply "the `startup` tool"): mandatory/purpose/decision/continuity source
+  resolution, role contract lookup, status derivation. This is the only tool that ever reads
+  Brain content (fixture today, live Drive in Phase 3).
+
+See `03-tool-contract.md` for both contracts. No other tools (no Brain search, no write
+operations, no admin) are exposed, per brief §8/§12. Splitting entrypoint from retrieval doesn't
+change the hardcoded-vs-retrieved invariant above — `startup()`'s payload is hardcoded guidance
+text, not a substitute canonical source; it must never grow into something Brain-authoritative,
+per the "MCP shouldn't become a competing canonical source" principle this split was built
+around.
 
 ## Transport
 

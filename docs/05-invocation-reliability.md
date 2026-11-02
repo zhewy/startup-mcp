@@ -1,9 +1,17 @@
 # Invocation Reliability Strategy
 
 Per brief §9, there are two separate reliability concerns. This document addresses the first
-(does the client call `startup` at all); execution reliability (does the call then work
+(does the client call the tool at all); execution reliability (does the call then work
 correctly) is addressed by `validation.py` and the BLOCKED/DEGRADED/READY status machine described
 in `03-tool-contract.md`.
+
+**Naming note:** everything below was written against a single `startup(purpose, role?)` tool,
+since renamed to `ground` after the tool surface was split in two (see `02-architecture.md`'s
+"Tool surface" section and `03-tool-contract.md`'s naming note). Where this document says
+`startup` below and means "the tool that performs full deterministic retrieval," read that as
+`ground` — preserved as originally written rather than silently edited, same discipline as the
+`topic`→`purpose` rename. The new, separate `startup()` entrypoint has its own, not-yet-answered
+invocation question, addressed in the new section near the end of this document.
 
 ## What cannot be guaranteed
 
@@ -66,6 +74,29 @@ Confirm, for each client:
   unprompted at the start of a fresh conversation, versus needing an explicit user instruction?
 
 These are empirical questions this document cannot answer from investigation alone.
+
+## New open question, 1 Nov 2026: chained invocation across the two-tool split
+
+Splitting one tool into `startup()` (lightweight) and `ground()` (full retrieval, what this
+document calls `startup` above) doesn't make the reliability problem go away — it potentially
+doubles it:
+
+1. Does a model call `startup()` unprompted at all? Untested. All existing evidence (0/5 trials
+   across Claude Desktop and Codex CLI, per `08-initialization-investigation.md`) is for the
+   *old*, now-`ground`-named tool, and does not transfer automatically to this new, differently
+   named, differently described, argument-free tool.
+2. *If* a model does call `startup()` (prompted or not) and receives its `guidance` text — does
+   that returned content then cause it to call `ground()` on its own, without a further explicit
+   instruction? This is the one genuinely new mechanism the split introduces: per the handshake
+   analysis in this conversation's chat record, a tool's *return value* is a real message the
+   model reads directly, unlike the `instructions`/`description` fields whose exposure to the
+   model is an unproven, client-dependent black box. If `startup()`'s guidance reliably triggers
+   an unprompted `ground()` call even when nothing else does, that would be a materially stronger
+   result than anything found so far — but it is a hypothesis, not yet a finding.
+
+Both need their own live-client rounds (same discipline as before: don't ask the model directly
+whether it would call the tool, give it an ordinary task and observe). Tracked as new rows in
+`06-test-plan.md`.
 
 ## Update, 31 Oct 2026
 

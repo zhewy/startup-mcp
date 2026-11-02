@@ -40,7 +40,10 @@ live Brain infrastructure — Phase 2 uses only a local fixture.
    Phase 2's code — confirm this is wanted before adding it, since it changes the tool surface
    beyond the single `startup` tool the brief scopes for the initial version (brief §8: "One
    primary startup tool" — a `prompts` entry that simply invokes the same tool is arguably still
-   within that scope, but flagging the distinction for approval rather than assuming it).
+   within that scope, but flagging the distinction for approval rather than assuming it; note the
+   tool surface already grew to two tools, `startup`/`ground`, for a different reason — see
+   decision 8 below — so this one needs re-evaluating against the current surface, not the
+   original single-tool one).
 
 7. **Permanent local service vs on-demand process.** Brief §8 says "No permanent local service
    unless required." Current design: the client (Claude Desktop) spawns the server process
@@ -48,3 +51,11 @@ live Brain infrastructure — Phase 2 uses only a local fixture.
    here runs as a standing background service/daemon. Confirm this matches intent before any
    future work considers caching Drive content across process restarts for performance (which
    would start to resemble a stateful local service and deserves its own review).
+
+8. **Should `startup()` ever take arguments?** Currently fully argument-free by design, per the
+   "even that might be more than necessary initially" framing from the proposal that motivated
+   the two-tool split (see `02-architecture.md`'s "Tool surface" section). The alternative — a
+   light hint argument (e.g. an anticipated purpose) that tailors `startup()`'s `guidance` text —
+   was considered and set aside for now, since any per-call tailoring risks pulling this tool back
+   toward doing retrieval, which is exactly the responsibility kept on `ground`'s side of the
+   split. Default is argument-free unless this is explicitly revisited.

@@ -12,8 +12,9 @@ See `docs/` for the full design record:
    Desktop→Web continuity.
 2. [`02-architecture.md`](docs/02-architecture.md) — component map and the hardcoded-vs-retrieved
    split.
-3. [`03-tool-contract.md`](docs/03-tool-contract.md) — the `startup(purpose, role?)` tool's input/
-   output schema and status semantics.
+3. [`03-tool-contract.md`](docs/03-tool-contract.md) — the `startup()` (lightweight entrypoint)
+   and `ground(purpose, role?)` (full retrieval) tools' input/output schemas and status
+   semantics.
 4. [`04-authentication.md`](docs/04-authentication.md) — the proposed (not yet implemented) Google
    Drive OAuth approach for Phase 3.
 5. [`05-invocation-reliability.md`](docs/05-invocation-reliability.md) — what can and can't be done
@@ -32,14 +33,20 @@ See `docs/` for the full design record:
 
 ## Current status: Phase 2 — minimal prototype
 
-This repo implements a single `startup` tool over MCP stdio, backed by a **local fixture** that
-stands in for live Brain retrieval (no Google Drive access yet — see decision 1 in
-`docs/07-decisions-needed.md`). It exists to let Phase 1/Phase 2 client-behavior questions
-(does Claude Desktop actually invoke this tool reliably? does Claude Desktop ↔ Web continuity
-work? per `docs/06-test-plan.md`) get answered before any live-data risk is taken on.
+This repo implements two tools over MCP stdio — `startup()`, a lightweight, argument-free
+entrypoint that returns short, stable, versioned guidance with no retrieval at all, and
+`ground(purpose, role?)`, the full deterministic retrieval call, backed by a **local fixture**
+that stands in for live Brain retrieval (no Google Drive access yet — see decision 1 in
+`docs/07-decisions-needed.md`). See `docs/02-architecture.md`'s "Tool surface" section for why
+it's split this way. It exists to let Phase 1/Phase 2 client-behavior questions (does Claude
+Desktop actually invoke either tool reliably? does Claude Desktop ↔ Web continuity work? per
+`docs/06-test-plan.md`) get answered before any live-data risk is taken on.
 
 ```
-startup(purpose="devotions")
+startup()
+  -> { "version": "v1", "guidance": "...", "next_action": "ground(purpose, role?)" }
+
+ground(purpose="devotions")
   -> { "status": "READY", "grounding": {...}, "sources": [...], ... }
 ```
 
@@ -47,7 +54,8 @@ startup(purpose="devotions")
 
 ```
 src/startup_mcp/
-  server.py       MCP entrypoint (stdio), registers the `startup` tool
+  server.py       MCP entrypoint (stdio), registers `startup` (lightweight) and `ground`
+                   (full retrieval)
   procedure.py     The deterministic startup procedure (brief steps 1-9)
   bundle.py        Assembles the final response bundle, applies the context budget
   config.py        Fixture path / context-budget configuration
