@@ -79,7 +79,64 @@ def _designations(path: Path) -> list[dict]:
     return [{"name": e["name"], "source_id": e["source_id"]} for e in entries]
 
 
-def refresh_config(cache_path: Path, designation_path: Path | None, reader=None) -> dict:
+BRAIN_INITIALIZATION_ID = "1bGVXeMqG899ScKLdADsyYtPP4tWOLyuA"
+_LINK = re.compile(r"https://drive\.google\.com/file/d/([A-Za-z0-9_-]+)/view")
+
+
+def _unique_link(content: str, label: str, pattern: str) -> str:
+    matches = set()
+    for line in content.splitlines():
+        if re.search(pattern, line, re.IGNORECASE):
+            # The first Drive link on a designation line is the current target;
+            # later links are explicitly marked preserved or historical identities.
+            links = _LINK.findall(line)
+            if links:
+                matches.add(links[0])
+    if len(matches) != 1:
+        raise ValueError(f"designation: {label} is {'missing' if not matches else 'ambiguous'}")
+    return matches.pop()
+
+
+def discover_sources(reader) -> list[dict]:
+    """Follow explicit designations in Brain's initialization and routing documents."""
+    bootstrap = reader.read(BRAIN_INITIALIZATION_ID)
+    routing_id = _unique_link(bootstrap["content"], "routing", r"canonical routing guide|AI-canonicals — purpose and routing")
+    routing = reader.read(routing_id)
+    if not routing["content"].strip():
+        raise ValueError("routing document is empty")
+    base_id = _unique_link(routing["content"], "Base", r"Base \[Base Contract — Brain\]")
+    bootstrap_base = _unique_link(bootstrap["content"], "Base", r"one designated Base Contract|Read Base \[Base Contract")
+    if base_id != bootstrap_base:
+        raise ValueError("designation: Base conflicts between initialization and routing")
+    return [{"name": "initialization", "source_id": BRAIN_INITIALIZATION_ID},
+            {"name": "routing", "source_id": routing_id},
+            {"name": "base", "source_id": base_id}]
+
+
+def _validate_cache(data: object) -> dict:
+    if not isinstance(data, dict) or data.get("schema_version") != 1:
+        raise ValueError("existing cache has invalid schema")
+    if not isinstance(data.get("refreshed_at"), str) or not isinstance(data.get("verification"), str):
+        raise ValueError("existing cache has missing metadata")
+    datetime.fromisoformat(data["refreshed_at"].replace("Z", "+00:00"))
+    sources = data.get("sources")
+    if not isinstance(sources, list) or not sources:
+        raise ValueError("existing cache has invalid sources")
+    names, ids = set(), set()
+    for row in sources:
+        if not isinstance(row, dict) or not all(isinstance(row.get(k), str) and row[k].strip()
+            for k in ("name", "source_id", "title", "version", "modified_at", "content", "sha256")):
+            raise ValueError("existing cache has missing source fields")
+        if row["name"] in names or row["source_id"] in ids:
+            raise ValueError("existing cache has duplicate identities")
+        if row["sha256"] != _digest(row["content"]):
+            raise ValueError("existing cache has invalid content hash")
+        datetime.fromisoformat(row["modified_at"].replace("Z", "+00:00"))
+        names.add(row["name"]); ids.add(row["source_id"])
+    return data
+
+
+def refresh_config(cache_path: Path, designation_path: Path | None = None, reader=None) -> dict:
     """Stage every designated source, validate, then atomically replace a single snapshot.
 
     Every designated item is required. A fixture reader may exercise the transaction but
@@ -97,17 +154,13 @@ def _refresh(cache_path: Path, designation_path: Path | None, reader) -> dict:
                "cache_activated": False}
     temporary = None
     try:
-        if designation_path is None:
-            raise ValueError("ZMCP_CONFIG_SOURCES is not configured")
-        if cache_path.resolve() == designation_path.resolve():
+        if designation_path is not None and cache_path.resolve() == designation_path.resolve():
             raise ValueError("cache path must differ from the designation file")
-        entries = _designations(designation_path)
-        receipt["sources"] = entries
         if reader is None:
-            token = os.environ.get("ZMCP_DRIVE_ACCESS_TOKEN")
-            if not token:
-                raise ValueError("ZMCP_DRIVE_ACCESS_TOKEN is not configured")
-            reader = DriveReader(token)
+            from .auth import access_token, TOKEN
+            reader = DriveReader(access_token(Path(os.environ.get("ZMCP_OAUTH_TOKEN", TOKEN))))
+        entries = _designations(designation_path) if designation_path is not None else discover_sources(reader)
+        receipt["sources"] = entries
         records = []
         for entry in entries:
             try:
@@ -128,7 +181,7 @@ def _refresh(cache_path: Path, designation_path: Path | None, reader) -> dict:
         receipt["verification"] = "live-brain" if live else "fixture-or-test"
         receipt["live_brain_verified"] = live
         receipt["sources"] = [{k: v for k, v in r.items() if k != "content"} for r in records]
-        previous = json.loads(cache_path.read_text(encoding="utf-8")) if cache_path.exists() else None
+        previous = _validate_cache(json.loads(cache_path.read_text(encoding="utf-8"))) if cache_path.exists() else None
         old = {r["name"]: r for r in previous["sources"]} if previous else {}
         new = {r["name"]: r for r in records}
         for name in sorted(old.keys() | new.keys()):
@@ -148,13 +201,17 @@ def _refresh(cache_path: Path, designation_path: Path | None, reader) -> dict:
             stream.write(encoded)
             stream.flush()
             os.fsync(stream.fileno())
-        if json.loads(temporary.read_text(encoding="utf-8")) != candidate:
+        if _validate_cache(json.loads(temporary.read_text(encoding="utf-8"))) != candidate:
             raise ValueError("staged configuration did not validate")
         os.replace(temporary, cache_path)
         receipt.update(status="REFRESHED", cache_activated=True, refreshed_at=candidate["refreshed_at"])
     except Exception as exc:
         # Network exceptions can include sensitive transport information; report type only.
-        receipt["errors"].append(str(exc) if isinstance(exc, ValueError) else type(exc).__name__)
+        safe = ("designation", "existing cache", "required designated", "invalid or empty source",
+                "Drive authentication", "Install zmcp", "cache path", "source changed",
+                "unsupported configuration", "staged configuration")
+        message = str(exc) if isinstance(exc, ValueError) else ""
+        receipt["errors"].append(message if message.startswith(safe) else type(exc).__name__)
     finally:
         if temporary is not None:
             try:

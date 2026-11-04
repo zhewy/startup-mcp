@@ -12,12 +12,14 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+drive = ["google-auth>=2.0", "google-auth-oauthlib>=1.0"]
 dev = [
     "pytest>=7",
 ]
 
 [project.scripts]
 zmcp = "zmcp.server:main"
+zmcp-auth = "zmcp.auth:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

@@ -179,3 +179,101 @@ def test_invalid_json_source_rejected(monkeypatch):
     monkeypatch.setattr(reader, "_get", lambda sid, query: json.dumps(meta).encode() if "fields" in query else b"{invalid")
     with pytest.raises(ValueError):
         reader.read("x")
+
+class RoutingReader(FixtureReader):
+    def __init__(self, *, conflict=False, missing=False):
+        super().__init__()
+        self.conflict, self.missing_route = conflict, missing
+
+    def read(self, sid):
+        from zmcp.refresh import BRAIN_INITIALIZATION_ID
+        route = "https://drive.google.com/file/d/routing123/view"
+        base = "https://drive.google.com/file/d/base123/view"
+        if sid == BRAIN_INITIALIZATION_ID:
+            content = ("Read the canonical routing guide " + ("" if self.missing_route else route) + "\n"
+                       "The one designated Base Contract is " + base)
+        elif sid == "routing123":
+            content = "Base [Base Contract — Brain](https://drive.google.com/file/d/" + ("other123" if self.conflict else "base123") + "/view)"
+        else:
+            content = "contract"
+        return {"source_id": sid, "title": sid, "version": "1", "modified_at": "2026-11-04T00:00:00Z", "content": content}
+
+
+def test_discovery_from_brain_route(tmp_path):
+    from zmcp.refresh import BRAIN_INITIALIZATION_ID
+    cache = tmp_path / "cache.json"
+    result = refresh_config(cache, reader=RoutingReader())
+    assert result["status"] == "REFRESHED"
+    assert [x["source_id"] for x in result["sources"]] == [BRAIN_INITIALIZATION_ID, "routing123", "base123"]
+    assert refresh_config(cache, reader=RoutingReader())["status"] == "CURRENT"
+
+
+@pytest.mark.parametrize("reader,error", [(RoutingReader(missing=True), "designation: routing is missing"),
+                                          (RoutingReader(conflict=True), "conflicts")])
+def test_discovery_fails_closed(tmp_path, reader, error):
+    result = refresh_config(tmp_path / "cache.json", reader=reader)
+    assert result["status"] == "FAILED"
+    assert error in result["errors"][0]
+
+
+@pytest.mark.parametrize("damage", ["schema", "field", "duplicate", "hash"])
+def test_corrupt_cache_is_preserved(setup, damage):
+    cache, sources, reader = setup
+    refresh_config(cache, sources, reader)
+    data = json.loads(cache.read_text())
+    if damage == "schema":
+        data["schema_version"] = 99
+    elif damage == "field":
+        del data["sources"][0]["title"]
+    elif damage == "duplicate":
+        data["sources"].append(data["sources"][0].copy())
+    else:
+        data["sources"][0]["sha256"] = "0" * 64
+    cache.write_text(json.dumps(data))
+    evidence = cache.read_bytes()
+    reader.content = "new"
+    result = refresh_config(cache, sources, reader)
+    assert result["status"] == "FAILED"
+    assert cache.read_bytes() == evidence
+
+
+def test_missing_credentials_do_not_leak(setup, monkeypatch):
+    cache, _, _ = setup
+    monkeypatch.setattr("zmcp.auth.access_token", lambda *a: (_ for _ in ()).throw(ValueError("Drive authentication required: run zmcp-auth once locally")))
+    result = refresh_config(cache)
+    assert result["status"] == "FAILED"
+    assert not cache.exists()
+
+def test_oauth_renewal_failure_is_sanitized(tmp_path, monkeypatch):
+    from zmcp import auth
+    token_file = tmp_path / "token.json"
+    token_file.write_text("private credential")
+    class Credentials:
+        valid = False
+        refresh_token = "secret-refresh-token"
+        @staticmethod
+        def from_authorized_user_file(*args):
+            return Credentials()
+        def has_scopes(self, scopes):
+            return True
+        def refresh(self, request):
+            raise RuntimeError("secret-refresh-token")
+    monkeypatch.setattr(auth, "_dependencies", lambda: (Credentials, object, object))
+    with pytest.raises(ValueError, match="Drive authentication failed") as error:
+        auth.access_token(token_file)
+    assert "secret-refresh-token" not in str(error.value)
+    assert token_file.read_text() == "private credential"
+
+
+def test_ambiguous_routing_designation(tmp_path):
+    reader = RoutingReader()
+    original = reader.read
+    def read(sid):
+        row = original(sid)
+        if row["source_id"] == "1bGVXeMqG899ScKLdADsyYtPP4tWOLyuA":
+            row["content"] += "\nRead the canonical routing guide https://drive.google.com/file/d/another123/view"
+        return row
+    reader.read = read
+    result = refresh_config(tmp_path / "cache.json", reader=reader)
+    assert result["status"] == "FAILED"
+    assert "ambiguous" in result["errors"][0]

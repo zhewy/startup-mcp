@@ -1,75 +1,49 @@
-# Manual configuration refresh
+# Manual Brain configuration refresh
 
-`refresh-config()` is an explicit MCP tool. No process initialization, connection,
-`startup`, or `ground` call triggers a freshness check. Startup remains the existing
-placeholder. This operation does not retire bootstrap, change canonical Brain
-documents, or deploy/reconfigure a desktop host.
+`refresh-config()` is explicitly invoked. It does not run at process startup, on
+`startup()` or on `ground()`. `startup()` remains a placeholder; `ground()` reads
+bundled fixtures. Neither consumes the configuration cache or delivers live roles.
 
-The previous branch had no configuration cache or live reader. This operation adds
-a persistent snapshot of explicitly designated configuration documents. It does
-not execute their contents or change startup instructions dynamically. `ground`
-continues to use fixtures and cannot establish live Brain grounding.
+## First use on a local host
 
-## Configuration
+1. In Google Cloud Console, create or select a project, enable Google Drive API,
+   configure the OAuth consent screen, and create a **Desktop app** OAuth client.
+   If the app is in Testing, add the intended account as a test user. Testing-mode
+   grants may expire and require consent again. The app requests only
+   `https://www.googleapis.com/auth/drive.readonly`, which grants read access to
+   the user's Drive; consent should be given only if that scope is acceptable.
+2. Install `pip install -e '.[drive]'`. Save the downloaded Desktop client JSON
+   locally as `~/.config/zmcp/oauth_client.json` (or set `ZMCP_OAUTH_CLIENT`).
+   Do not commit it. Run `zmcp-auth` in an interactive local terminal once to
+   complete browser consent. It writes `~/.config/zmcp/token.json` with mode 0600
+   (or `ZMCP_OAUTH_TOKEN`). Keep this file private. Access tokens are renewed
+   from its refresh token. If renewal fails, repeat `zmcp-auth` locally.
+3. Invoke `refresh-config` when you want a new comparison. No source-ID JSON is
+   needed. It starts at Brain initialization ID
+   `1bGVXeMqG899ScKLdADsyYtPP4tWOLyuA`, follows its explicit routing guide,
+   checks that Base's designation agrees between initialization and routing,
+   and reads those three configuration sources. Missing, ambiguous or conflicting
+   links fail closed. This is a bounded configuration snapshot, not an inventory
+   of all role or task-specific materials.
 
-Set `ZMCP_CONFIG_SOURCES` to an administrator-controlled local JSON designation
-file, containing the exact Brain Drive file IDs to check. No discovery, guessed
-canonical IDs, or fixture fallback is used. All designated sources are required.
-For example (replace the illustrative ID before use):
+The older `ZMCP_CONFIG_SOURCES` JSON file remains an advanced compatibility
+option. It overrides discovery and should only be used with intentionally
+specified source IDs. `ZMCP_CONFIG_CACHE` sets the cache location (default
+`~/.zmcp/config-cache.json`).
 
-```json
-{"sources": [{"name": "initialization", "source_id": "YOUR_BRAIN_FILE_ID"}]}
-```
+## Transaction and evidence
 
-Set `ZMCP_DRIVE_ACCESS_TOKEN` to an existing read-only Google Drive access token.
-The tool does not provision OAuth credentials, refresh tokens, or request write
-access. Missing/expired credentials yield a failed receipt. Tokens are never
-included in receipts. Only the designated file IDs are retrieved, from the fixed
-Google Drive API endpoint. Native Google Docs are exported as plain text; plain
-text, Markdown and JSON files are supported. JSON files must parse successfully.
-Other file types fail closed.
+Every source is read with metadata before and after retrieval. A changed revision,
+missing item, invalid identity, empty content, or failed validation aborts the
+refresh. Before replacement the existing cache is checked for schema version,
+required fields, unique names and IDs, timestamps, and content hashes. A corrupt
+cache is left in place as evidence. A replacement is written and checked in the
+same directory, then activated with `os.replace`. Retrieval, staging or activation
+failure preserves the previous cache. Unchanged content is not rewritten.
 
-`ZMCP_CONFIG_CACHE` optionally selects the snapshot path (default
-`~/.zmcp/config-cache.json`). Do not point it at a Brain source or the designation
-file. Only the cache and a temporary staging file are written. Use a single server
-process per cache path; calls within that process are serialized.
-
-## Transaction and receipt
-
-Each invocation reads the designation file afresh, retrieves every designated
-source and checks metadata both before and after retrieval to reject a revision
-that changed mid-read. Validation requires exact source identity, nonempty title,
-version and content, a parseable modification timestamp, supported source types,
-and unique designation names and IDs. This validates the snapshot's integrity,
-not the semantic truth of arbitrary Brain prose. It cannot provide a global
-transaction across separate Drive documents.
-
-The receipt reports `CURRENT`, `REFRESHED` or `FAILED`, whether the *previous*
-snapshot was `current` (`null` if comparison could not complete), `checked_at`,
-`refreshed_at`, source IDs/titles/versions/modification times/content hashes,
-added/changed/removed entries, `missing`, `errors`, and `cache_activated`.
-Source content and revision metadata both participate in comparison. Removing a
-designation is reported as a removal; an unavailable designated source instead
-fails the entire refresh and is listed as missing.
-
-Changed content is staged in the cache's directory, flushed, parsed back and
-compared to the validated candidate, then activated with `os.replace`. Retrieval,
-validation, staging or replacement failures preserve the previous cache bytes.
-A corrupt existing cache fails closed rather than silently overwriting evidence.
-An unchanged cache is not rewritten; its last activation timestamp is retained.
-No cache exists until the first successful explicit refresh.
-
-`live_brain_verified` means all designated material was successfully retrieved by
-the built-in live Drive reader during this call. `verification=fixture-or-test`
-never establishes live verification, even on a successful fixture transaction.
-Missing configuration/credentials is `unverified`. A failed activation may still
-have successful retrieval evidence; always check `status` and `cache_activated`.
-
-## Verification scope
-
-Automated tests use local temporary caches and mocked readers/HTTP responses.
-They cover current/changed content, missing material, invalid replacements,
-transport/staging/replacement failure, provenance, revision races and the MCP
-registration. They do **not** verify live Brain contents, OAuth setup, desktop
-client behavior or host deployment. A live receipt requires a separately invoked
-tool call with actual designated sources and valid credentials.
+Receipts include status (`CURRENT`, `REFRESHED`, `FAILED`), source identities and
+hashes, changes and missing sources, and whether activation happened. No source
+content or credential is returned. `live_brain_verified` requires a successful
+read by the built-in Drive reader; fixture and mocked tests cannot assert it.
+This has not been verified against a live host OAuth session or MCP desktop client.
+No Brain canonical is edited and no host is deployed by this command.

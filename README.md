@@ -41,8 +41,8 @@ ground(purpose, role?) -> legacy fixture grounding bundle
 refresh-config() -> explicit Brain configuration comparison and atomic cache refresh
 ```
 
-The manual refresh operation is configured separately and performs no startup
-freshness checks. See [configuration, transaction guarantees and receipts](docs/10-refresh-config.md).
+The manual refresh operation discovers its three configuration sources from Brain
+initialization and routing, and performs no startup freshness checks. See [configuration, transaction guarantees and receipts](docs/10-refresh-config.md).
 
 The previous optional arguments `purpose` and `role` are accepted for compatibility
 and ignored. The tool performs no retrieval and reports no grounding status.
@@ -114,7 +114,7 @@ transfers.
 
 - Live read-only Drive retrieval is limited to explicitly designated configuration
   documents through `refresh-config`; the grounding prototype remains fixture-only.
-- No OAuth flow (`docs/04-authentication.md` describes the intended design, unimplemented).
+- Local one-time read-only Drive OAuth is available through `zmcp-auth`; see `docs/10-refresh-config.md`.
 - No MCP `prompts` entry for explicit, non-model-mediated invocation (proposed, not yet built —
   decision 6 in `docs/07-decisions-needed.md`).
 - No hands-on verification against a running Claude Desktop or ChatGPT Desktop install — the
