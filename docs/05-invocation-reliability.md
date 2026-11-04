@@ -1,10 +1,24 @@
 # Invocation Reliability Strategy
 
-> Current behaviour (4 Nov 2026): `startup()` is a placeholder returning
-> `"to be defined"`; no startup invocation is required. `ground` is retained as a
-> local fixture prototype. Earlier invocation strategies and startup payload
-> descriptions below are design history, not the current startup contract.
+## Current startup route (4 Nov 2026)
 
+`startup()` now returns the Brain initialization entry point and tells the calling
+session to read current canonical routing through its own authorized Drive
+connection. No role is the default unless explicitly assigned. The server does
+not retrieve Brain, resolve role paths, use a grounding cache, or claim freshness.
+Calling `startup()` is still model/client-dependent; the MCP server cannot force
+an unprompted call. The initialization instructions also present the entry link,
+subject to what the client exposes to the model. An explicit user request to
+invoke `startup` remains the testable path. See `server.py` for the current text.
+
+The experiments and proposed mitigations below are preserved as **historical
+prototype evidence**. At the time, `startup()` returned `"to be defined"`, and
+`ground()` held the fixture retrieval prototype. References below to a
+placeholder, a `startup`→`ground` chain, or a READY receipt are not descriptions
+of the current Brain-directed startup route. The old chain question was not
+validated for the current tool and is no longer a planned dependency.
+
+## Historical design and invocation evidence
 
 Per brief §9, there are two separate reliability concerns. This document addresses the first
 (does the client call the tool at all); execution reliability (does the call then work
@@ -81,7 +95,7 @@ Confirm, for each client:
 
 These are empirical questions this document cannot answer from investigation alone.
 
-## New open question, 1 Nov 2026: chained invocation across the two-tool split
+## Historical open question, 1 Nov 2026: chained invocation across the two-tool split
 
 Splitting one tool into `startup()` (lightweight) and `ground()` (full retrieval, what this
 document calls `startup` above) doesn't make the reliability problem go away — it potentially

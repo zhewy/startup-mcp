@@ -100,3 +100,71 @@ response, and the human relays them here manually.
 - [ ] Noted whether this change needs a Desktop restart or not
 - [ ] Know the exact commit SHA the other end should see after pulling, so it can self-verify
       (`git log -1 --oneline`) instead of assuming it's current
+
+## ChatGPT Windows plugin package: repeatable build and delivery
+
+This package is separate from the pull-and-test Claude Desktop loop above.
+It is a local ChatGPT desktop test plugin; a hosted/web/mobile install and
+automatic invocation are not established. Build it from the intended commit on
+`claude/cool-franklin-81hsgd` with a clean working tree. The source templates
+are under `packaging/chatgpt/`; `packaging/build_chatgpt_plugin.py` reads the
+version from `plugin.json` and includes the template plus `src/zmcp` Python and
+fixture JSON files. It excludes caches and local credentials.
+
+```bash
+git fetch origin claude/cool-franklin-81hsgd
+git status --short --branch
+python -m pytest -q
+git diff --check
+python packaging/build_chatgpt_plugin.py
+unzip -t dist/zmcp-chatgpt-0.1.1.zip
+sha256sum dist/zmcp-chatgpt-0.1.1.zip
+```
+
+The current package filename is `zmcp-chatgpt-0.1.1.zip`; use the actual version
+from `packaging/chatgpt/plugin.json` after a future version change. For a direct
+GitHub download, copy the validated ZIP to a versioned filename under
+`packaging/downloads/`, commit that binary, push the same Franklin branch, and
+verify that a download from the resulting commit's `raw.githubusercontent.com`
+URL has the same SHA-256. Keep the source commit ID in the binary filename so
+users can identify which code was packaged. For example, after the source
+changes have been committed and pushed:
+
+```bash
+SOURCE_SHA=$(git rev-parse --short HEAD)
+PACKAGE=zmcp-chatgpt-0.1.1-${SOURCE_SHA}.zip
+cp dist/zmcp-chatgpt-0.1.1.zip "packaging/downloads/$PACKAGE"
+git add "packaging/downloads/$PACKAGE"
+git commit -m "Publish Windows plugin test package"
+git push origin HEAD:refs/heads/claude/cool-franklin-81hsgd
+PACKAGE_COMMIT=$(git rev-parse HEAD)
+curl -L --fail --silent --show-error \
+  "https://raw.githubusercontent.com/zhewy/zmcp/$PACKAGE_COMMIT/packaging/downloads/$PACKAGE" \
+  -o "/tmp/$PACKAGE"
+sha256sum "dist/zmcp-chatgpt-0.1.1.zip" "/tmp/$PACKAGE"
+```
+
+The two hashes must match. Do not publish if the branch has moved since the
+source commit; fetch and review first. Never include OAuth client JSON, tokens,
+local caches or environment files in the ZIP or download commit.
+
+On Windows, extract the ZIP and run `install-windows.cmd` from the extracted
+folder. It invokes `install.py` through `py -3` or `python`; the installer creates
+or reuses `%USERPROFILE%\.zmcp\runtime-0.1.0`, installs Python dependencies,
+overwrites an already registered `%USERPROFILE%\.codex\plugins\zmcp` folder,
+backs up and updates the personal marketplace entry, and preserves other
+entries. `launch.py` remains the working stdio loader; `install.py` does not
+replace it with a new loader design. Fully quit and restart ChatGPT Desktop,
+then install/enable zmcp from the personal marketplace (disable and reinstall
+if the old tool text remains). Installation requires network access for pip;
+startup itself does not perform a package download or Drive read. OAuth is
+optional for the separate explicit `refresh-config` operation and is never
+provisioned by this installer.
+
+Verify a live host separately: confirm plugin discovery, invoke `startup`
+explicitly, inspect the actual response and MCP log, and confirm the calling
+session follows Brain routing through its own authorized Drive connection.
+Check that no cache refresh occurs. The repository's automated tests and ZIP
+integrity check are mocked/local checks, not proof of ChatGPT Desktop support,
+its model's automatic invocation, the user's Drive connector access, or a
+successful Windows installation.
