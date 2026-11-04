@@ -1,5 +1,9 @@
 # MCP Initialization & Automatic Discovery — Findings and Recommendation
 
+> **Project rename (4 Nov 2026):** The project is now `zmcp`; its Python module is
+> `zmcp.server` and settings use `ZMCP_*`. Historical commands and captured logs
+> below retain the original `startup-mcp` / `startup_mcp` names as recorded.
+
 Responds to the 31 Oct 2026 handover on whether MCP connection initialization can reliably lead
 to automatic conversation/task startup. Per that handover's own instruction ("record actual
 behaviour, rather than treating model statements about having initialized as evidence"), this

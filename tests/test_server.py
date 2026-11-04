@@ -3,13 +3,22 @@ import json
 import shutil
 from pathlib import Path
 
-from startup_mcp.config import Config
-from startup_mcp.server import STARTUP_PAYLOAD, handle_ground, startup
-from startup_mcp.sources.fixture import FixtureSourceProvider
+from zmcp.config import Config
+from zmcp.server import handle_ground, startup
+from zmcp.sources.fixture import FixtureSourceProvider
 
 DEFAULT_FIXTURE_ROOT = (
-    Path(__file__).parent.parent / "src" / "startup_mcp" / "fixtures" / "default"
+    Path(__file__).parent.parent / "src" / "zmcp" / "fixtures" / "default"
 )
+
+
+def test_public_startup_is_a_placeholder_without_retrieval(monkeypatch):
+    def unexpected_retrieval(*args, **kwargs):
+        raise AssertionError("Placeholder must not retrieve fixture grounding")
+
+    monkeypatch.setattr("zmcp.server.run_startup", unexpected_retrieval)
+    assert startup() == "to be defined"
+    assert startup(purpose="librarian", role="librarian") == "to be defined"
 
 
 def _copy_fixture(tmp_path: Path) -> Path:
@@ -187,20 +196,5 @@ def test_budget_truncation_drops_lowest_priority_content_first(tmp_path):
     assert any(entry["source_id"] == "continuity_001" for entry in result["sources"])
 
 
-def test_startup_returns_versioned_guidance():
-    result = startup()
-
-    assert result == STARTUP_PAYLOAD
-    assert result["version"] == "v1"
-    assert "ground" in result["guidance"]
-    assert result["next_action"] == "ground(purpose, role?)"
-
-
 def test_startup_is_static_and_deterministic():
-    # No provider/fixture argument exists on this tool's signature at all — this is the
-    # structural guarantee that it can't retrieve canonical content, not just an observed
-    # behavior.
-    first = startup()
-    second = startup()
-
-    assert first == second
+    assert startup() == startup() == "to be defined"

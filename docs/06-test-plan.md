@@ -1,5 +1,11 @@
 # Prototype Test Plan
 
+> Current behaviour (4 Nov 2026): `startup()` is a placeholder returning
+> `"to be defined"`; no startup invocation is required. `ground` is retained as a
+> local fixture prototype. Earlier invocation strategies and startup payload
+> descriptions below are design history, not the current startup contract.
+
+
 Maps to the acceptance tests in brief §11. Split into what this repo's automated tests cover now
 (fixture-based, no live client/Drive needed) versus what needs a human running a real desktop
 client (manual, one-time per phase).
@@ -19,7 +25,7 @@ client (manual, one-time per phase).
 
 Run with:
 ```bash
-cd startup-mcp
+cd zmcp
 pip install -e ".[dev]"
 pytest
 ```
@@ -104,7 +110,7 @@ meaning what is now `ground` (the full retrieval call) — preserved as written,
 ## G. CLI agent clients — new scope, beyond the brief's two named clients
 
 The handover brief named exactly two targets: ChatGPT Desktop and Claude Desktop — consumer chat
-GUI apps. This section tracks a deliberate scope addition: testing Startup MCP against **CLI
+GUI apps. This section tracks a deliberate scope addition: testing zmcp against **CLI
 coding-agent tools** instead, which are separate products from their respective companies'
 consumer chat apps, not alternate skins on the same one. Two parallel, independently-tracked
 streams:
@@ -126,7 +132,7 @@ streams:
   `codex mcp add <NAME> [--env KEY=VAL] -- <COMMAND>...`.
 
   That config file already has three servers configured on kofimule: `iqbible` and
-  `brain-recall` (both HTTP), and `hub` (stdio, a Python `mcphub.cli` server). Startup MCP is
+  `brain-recall` (both HTTP), and `hub` (stdio, a Python `mcphub.cli` server). zmcp is
   **not wired in yet** — recon only, as instructed.
 
   **Security note, not acted on (out of scope for this project):** the reporting session found
@@ -160,7 +166,7 @@ own knowledge each time instead of calling `startup`. Codex does not persist thi
 anywhere discoverable (`~/.codex`, including `logs_2.sqlite`, searched directly) — only its own
 `mcp_tool_call` event stream via `codex exec --json` is usable as evidence, which is what both
 tests above relied on. Full raw evidence: `08-initialization-investigation.md` §0.9. The
-`startup-mcp` entry is still live in `~/.codex/config.toml` on kofimule, not yet removed.
+`zmcp` entry is still live in `~/.codex/config.toml` on kofimule, not yet removed.
 
 **Claude Code CLI stream: not yet run.** Still open.
 

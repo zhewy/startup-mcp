@@ -85,7 +85,7 @@ response, and the human relays them here manually.
   to work so far (automatic invocation tested negative; see `docs/08-initialization-investigation.md`
   §0.5/§1 Q2). Don't spend a round re-testing automatic invocation unless that's specifically
   what changed.
-- Check `mcp-server-startup-mcp.log` for the `invoked`/`returned` lines. That's the evidence —
+- Check `mcp-server-zmcp.log` for the `invoked`/`returned` lines. That's the evidence —
   not the model's own account of what it did.
 
 **5. Report back with raw log lines, not narration.**

@@ -1,78 +1,43 @@
 # MCP Tool Contract
 
-**Naming note (topic → purpose):** the handover brief's illustrative signature uses `topic` (e.g.
+> Current public surface (4 Nov 2026): `startup()` returns only `"to be defined"`
+> and need not be called. `ground(purpose, role?)`, retained from the parallel
+> prototype update, returns local fixture data only. Neither tool reads live Brain.
+> The proposed `role` tool is not implemented. Older architecture and bundle
+> descriptions below concern the fixture prototype.
+
+
+## Current public contract (4 Nov 2026)
+
+`startup(purpose: string | null = null, role: string | null = null) -> string`
+returns exactly `"to be defined"`. Arguments are accepted for compatibility and
+ignored. No retrieval or grounding validation occurs; callers need not invoke it.
+Connection initialization continues to provide Brain location and initialization
+links. A `role` tool for `architect` and `librarian` is being considered, not yet
+implemented.
+
+## Historical fixture prototype contract
+
+The remaining sections describe the retained fixture pipeline, not the current
+public startup response.
+
+**Naming note:** the handover brief's illustrative signature uses `topic` (e.g.
 `startup(topic: string, role?: string)`). This implementation uses `purpose` instead — same
 concept, renamed deliberately after the Phase 2 prototype was already live and tested (see
 `docs/08-initialization-investigation.md`, which preserves pre-rename log quotes verbatim and
-notes the rename explicitly).
-
-**Naming note (single tool → two tools):** the brief's own illustrative signature, and this
-implementation up to this point, described a single `startup(purpose, role?)` tool that always
-performs full deterministic retrieval. This has since been split into two tools, `startup` and
-`ground`, to separate a lightweight entrypoint from the (renamed) full retrieval call — see
-`02-architecture.md`'s "Tool surface" section for the rationale. Everything the brief and earlier
-docs called "the `startup` tool" is now `ground`; the name `startup` now refers to the new,
-argument-free, Brain-content-free entrypoint described first below.
+notes the rename explicitly). Everything below reflects the prototype contract after that parameter rename.
 
 ## Tool: `startup`
 
 ### Description (as exposed to the calling model)
 
-> Lightweight entrypoint, takes no arguments. Returns short, stable, versioned guidance on when
-> this server's full grounding call (`ground`) is necessary — it does not itself retrieve any
-> canonical content. Call this at the start of a new conversation, or whenever unsure whether a
-> task depends on Brain-backed grounding, before deciding whether to call `ground`.
-
-### Input schema
-
-```json
-{ "type": "object", "properties": {} }
-```
-
-No arguments. This is deliberate — anything resembling a `purpose`/`role` parameter here would
-blur this tool back into performing retrieval, which is exactly the responsibility `ground` keeps.
-
-### Output schema
-
-```json
-{
-  "version": "v1",
-  "guidance": "string — explains what \"Brain\" means, that receiving this response is not grounding, and when to call `ground`",
-  "next_action": "ground(purpose, role?)"
-}
-```
-
-### Properties
-
-- **Static and versioned.** The payload is a fixed constant in `server.py`
-  (`STARTUP_PAYLOAD`), not computed per-call and not read from any source file — two calls in the
-  same process return identical results, structurally guaranteed by the tool having no
-  `SourceProvider` dependency at all, not just observed to be so.
-- **Never a substitute for `ground`.** This tool's `guidance` text must stay generic routing
-  advice — it must never grow into something Brain-authoritative (e.g. it must not enumerate
-  specific purpose/role names, per the data-driven-purposes discipline `procedure.py` already
-  follows). If it starts answering questions `ground` should answer, it has become a competing
-  canonical source, which is the one thing this split was designed to avoid.
-- **Invocation reliability is a separate, untested question from `ground`'s.** Empirical findings
-  for the (renamed) full-retrieval tool — zero unprompted invocations across every trial run so
-  far (1 Claude Desktop round, 3 Codex CLI runs) — do not automatically transfer to this tool.
-  Whether a model calls `startup()` unprompted, and whether receiving its guidance then causes an
-  unprompted `ground` call, are each their own open questions. See `05-invocation-reliability.md`.
-
-## Tool: `ground`
-
-### Description (as exposed to the calling model)
-
 > Retrieve and validate the mandatory grounding (bootstrap, canonical designations, Base and role
 > contracts, purpose knowledge, decisions, continuity) required to begin a Brain-grounded
-> conversation for the given purpose. This is the full, deterministic retrieval step — call
-> `startup` first for short guidance on whether this is necessary for the task at hand. Call this
-> with the current purpose (and, if known, a role hint) at the start of a new conversation, AND
-> again at the start of any substantive new task within an existing conversation — a prior call
-> does not cover a later, different purpose. Do not attempt to independently discover or
-> reconstruct grounding documents yourself — this tool performs that retrieval deterministically.
-> Returns a structured bundle with an explicit `status` of READY, DEGRADED, or BLOCKED; never
-> treat ungrounded reasoning as equivalent to a READY result.
+> conversation for the given purpose. Call this once, before any other reasoning about the
+> purpose, at the start of a new conversation. Do not attempt to independently discover or
+> reconstruct grounding documents — this tool performs that retrieval deterministically. Returns
+> a structured bundle with an explicit `status` of READY, DEGRADED, or BLOCKED; never treat
+> ungrounded reasoning as equivalent to a READY result.
 
 (Rationale for the directive tone: per brief §9, invocation reliability is improved, not
 guaranteed, by making the tool description itself tell the model when and why to call it.)
@@ -104,7 +69,7 @@ Matches brief §5, with field semantics pinned down:
 {
   "status": "READY | DEGRADED | BLOCKED",
   "request": {
-    "operation": "ground",
+    "operation": "startup",
     "purpose": "string, echoed verbatim",
     "role_hint": "string or null, echoed verbatim (renamed from input `role` to make clear it's a hint)"
   },
@@ -126,7 +91,7 @@ Matches brief §5, with field semantics pinned down:
   "receipt": {
     "generated_at": "ISO-8601",
     "source_versions": { "...": "..." },
-    "refresh_hint": "Call `ground` again with the same purpose if this conversation is continued elsewhere or after significant truncation/compaction."
+    "refresh_hint": "Call `startup` again with the same purpose if this conversation is continued elsewhere or after significant truncation/compaction."
   }
 }
 ```
@@ -140,7 +105,7 @@ Notes:
   budget reasons is still listed here, see `06-test-plan.md` budget test).
 - `receipt` is the mechanism for brief §10 (Desktop→Web continuity): a model picking the
   conversation back up, in Web or after compaction, has enough to decide whether grounding is
-  stale and whether to re-call `ground`.
+  stale and whether to re-call `startup`.
 - `permissions.write_authority` is always `false` from this tool in the current scope (brief §8:
   "No canonical writes"). It is still retrieved from Brain's governance data (not hardcoded to
   `false` as a business rule) but the server additionally hardcodes a defensive floor: it will

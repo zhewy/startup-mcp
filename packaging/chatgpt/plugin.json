@@ -1,0 +1,19 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "zmcp",
+  "version": "0.1.0",
+  "description": "Brain location and initialization guidance, with a reserved startup tool.",
+  "extensions": {
+    "com.openai": {
+      "requires_local_executor": true,
+      "interface": {
+        "displayName": "zmcp",
+        "shortDescription": "Brain startup guidance",
+        "longDescription": "Provides Brain location and initialization links during MCP connection initialization. The startup tool is reserved and returns only 'to be defined'; there is no need to call it. A legacy ground tool returns local fixture data only, not live Brain grounding. Requires local execution and Python.",
+        "category": "Productivity",
+        "capabilities": [],
+        "defaultPrompt": "What is Brain and where is its initialization document?"
+      }
+    }
+  }
+}

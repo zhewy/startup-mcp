@@ -16,8 +16,8 @@ class Config:
 
     @classmethod
     def from_env(cls) -> "Config":
-        root = os.environ.get("STARTUP_MCP_FIXTURE_ROOT")
-        budget = os.environ.get("STARTUP_MCP_CONTEXT_BUDGET_CHARS")
+        root = os.environ.get("ZMCP_FIXTURE_ROOT")
+        budget = os.environ.get("ZMCP_CONTEXT_BUDGET_CHARS")
         return cls(
             fixture_root=Path(root) if root else DEFAULT_FIXTURE_ROOT,
             context_budget_chars=int(budget) if budget else DEFAULT_CONTEXT_BUDGET_CHARS,

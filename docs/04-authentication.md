@@ -2,7 +2,7 @@
 
 ## Decision
 
-Startup MCP authenticates to Google Drive with its **own** OAuth 2.0 client, independent of
+zmcp authenticates to Google Drive with its **own** OAuth 2.0 client, independent of
 either desktop app's built-in Drive connector. See `01-feasibility.md` §2 for why: no evidence
 either client exposes connector credentials to a local MCP process, and the working
 precedent among existing Google Drive MCP servers is a dedicated client.
@@ -24,8 +24,8 @@ Drive — see `02-architecture.md`). This document specifies the approach for Ph
    shared folder it did not create. **Decision required from the user**: confirm whether
    `drive.readonly` (broad, read-only, sees all of the user's Drive) or a narrower, per-file grant
    is acceptable — see `07-decisions-needed.md`.
-5. The user supplies the resulting `client_id`/`client_secret` to Startup MCP via local
-   configuration (e.g. `~/.config/startup-mcp/oauth_client.json` or environment variables) — never
+5. The user supplies the resulting `client_id`/`client_secret` to zmcp via local
+   configuration (e.g. `~/.config/zmcp/oauth_client.json` or environment variables) — never
    committed to this repository.
 
 ## Runtime flow
@@ -34,7 +34,7 @@ Drive — see `02-architecture.md`). This document specifies the approach for Ph
    user's default browser to Google's consent screen, and receives the authorization code via the
    loopback redirect (standard "installed application" OAuth flow — no secret embedded in a
    public client, no copy-pasted codes).
-2. The resulting refresh token is cached locally (e.g. `~/.config/startup-mcp/token.json`,
+2. The resulting refresh token is cached locally (e.g. `~/.config/zmcp/token.json`,
    file mode `0600`, never logged, never included in any tool output).
 3. On subsequent runs, the server uses the cached refresh token silently; if it has been revoked
    or expired, the server returns `BLOCKED` with an `unresolved` entry telling the user re-auth is

@@ -1,0 +1,49 @@
+zmcp — private local ChatGPT desktop plugin (0.1.0)
+
+Requires a ChatGPT desktop version with local plugin support and Python 3.10+.
+This ZIP is for local desktop use. It is not a hosted MCP for ChatGPT web/mobile.
+
+1. Extract this ZIP to a folder.
+2. Open a terminal in the extracted folder containing plugin.json.
+3. Run: python install.py
+   If your Python command is python3, use python3 install.py and change the
+   command in mcp.json from python to python3 before restarting ChatGPT.
+4. Fully quit and restart ChatGPT desktop. In Work mode or Codex, open Plugins,
+   choose the personal-local marketplace (or your existing personal marketplace),
+   and install/enable zmcp. Use a task that executes locally.
+5. Select zmcp with @ and ask:
+   What is Brain and where is its initialization document?
+
+install.py downloads mcp==2.3.0 and dependencies from your configured Python
+package index into ~/.zmcp/runtime-0.1.0. It copies the plugin into
+~/.codex/plugins/zmcp and registers ./.codex/plugins/zmcp in
+~/.agents/plugins/marketplace.json, preserving other entries and
+backing up an existing marketplace before changing it. Python must be on the
+PATH available to ChatGPT; if necessary set mcp.json command to its full path.
+No credentials are included or requested. The launcher makes no automatic
+package downloads. Setup needs network access; startup calls do not.
+
+MCP connection instructions include exactly:
+Brain is z’s shared knowledge, context and AI-governance store.
+Folder: https://drive.google.com/drive/folders/1F3IchT4CKGqTSEj1CSpMpj7GdqTkxy54
+Initialization: https://drive.google.com/file/d/1bGVXeMqG899ScKLdADsyYtPP4tWOLyuA/view
+
+The host decides whether to expose initialization instructions to the model.
+Connecting does not read these links, authenticate to Drive, or call startup.
+The startup tool returns only "to be defined". There is no need to call it.
+The legacy ground tool returns local fixture data, not live Brain grounding.
+A role tool for architect/librarian is under consideration, not implemented.
+
+Verification: the packaged MCP handshake and tool discovery were checked using
+an in-memory Python MCP client; fixture logic passes the repository tests.
+The subprocess stdio handshake and the client tool-call response timed out in
+this environment, so transport verification is incomplete. A ChatGPT desktop
+installation was not available here. Treat this as a desktop test package,
+not a verified desktop installation.
+
+Official local installation documentation:
+https://developers.openai.com/plugins/build/plugins#install-a-local-plugin-manually
+
+Uninstall: disable/uninstall in ChatGPT desktop, then remove only the zmcp
+entry from ~/.agents/plugins/marketplace.json. The ~/.codex/plugins/zmcp folder and the
+~/.zmcp/runtime-0.1.0 runtime can then be deleted.

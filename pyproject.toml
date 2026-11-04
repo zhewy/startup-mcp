@@ -3,7 +3,7 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "startup-mcp"
+name = "zmcp"
 version = "0.1.0"
 description = "Deterministic conversation-startup grounding MCP server for AI chat clients."
 requires-python = ">=3.10"
@@ -17,10 +17,10 @@ dev = [
 ]
 
 [project.scripts]
-startup-mcp = "startup_mcp.server:main"
+zmcp = "zmcp.server:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
 
 [tool.setuptools.package-data]
-startup_mcp = ["fixtures/default/**/*.json"]
+zmcp = ["fixtures/default/**/*.json"]

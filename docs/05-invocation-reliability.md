@@ -1,5 +1,11 @@
 # Invocation Reliability Strategy
 
+> Current behaviour (4 Nov 2026): `startup()` is a placeholder returning
+> `"to be defined"`; no startup invocation is required. `ground` is retained as a
+> local fixture prototype. Earlier invocation strategies and startup payload
+> descriptions below are design history, not the current startup contract.
+
+
 Per brief §9, there are two separate reliability concerns. This document addresses the first
 (does the client call the tool at all); execution reliability (does the call then work
 correctly) is addressed by `validation.py` and the BLOCKED/DEGRADED/READY status machine described

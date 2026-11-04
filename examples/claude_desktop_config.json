@@ -1,11 +1,11 @@
 {
   "mcpServers": {
-    "startup-mcp": {
+    "zmcp": {
       "command": "python3",
-      "args": ["-m", "startup_mcp.server"],
+      "args": ["-m", "zmcp.server"],
       "env": {
-        "STARTUP_MCP_FIXTURE_ROOT": "/absolute/path/to/startup-mcp/src/startup_mcp/fixtures/default",
-        "STARTUP_MCP_CONTEXT_BUDGET_CHARS": "20000"
+        "ZMCP_FIXTURE_ROOT": "/absolute/path/to/zmcp/src/zmcp/fixtures/default",
+        "ZMCP_CONTEXT_BUDGET_CHARS": "20000"
       }
     }
   }

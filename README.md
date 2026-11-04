@@ -1,9 +1,10 @@
-# Startup MCP
+# zmcp
 
-A lightweight, platform-neutral MCP server that moves the mechanical work of AI conversation
-startup — canonical retrieval, role grounding, purpose-context assembly — into a deterministic
-service, so a calling AI doesn't have to independently discover and interpret a chain of startup
-documents.
+A lightweight MCP server for Brain context and AI startup guidance. Connection
+initialization supplies Brain's description, folder link, and initialization link.
+The `startup` tool is currently reserved and returns only `"to be defined"`; there
+is no need to call it. A separate `role` call for `architect` or `librarian` is
+under consideration, not implemented.
 
 See `docs/` for the full design record:
 
@@ -12,9 +13,8 @@ See `docs/` for the full design record:
    Desktop→Web continuity.
 2. [`02-architecture.md`](docs/02-architecture.md) — component map and the hardcoded-vs-retrieved
    split.
-3. [`03-tool-contract.md`](docs/03-tool-contract.md) — the `startup()` (lightweight entrypoint)
-   and `ground(purpose, role?)` (full retrieval) tools' input/output schemas and status
-   semantics.
+3. [`03-tool-contract.md`](docs/03-tool-contract.md) — the `startup(purpose, role?)` tool's input/
+   output schema and status semantics.
 4. [`04-authentication.md`](docs/04-authentication.md) — the proposed (not yet implemented) Google
    Drive OAuth approach for Phase 3.
 5. [`05-invocation-reliability.md`](docs/05-invocation-reliability.md) — what can and can't be done
@@ -31,31 +31,28 @@ See `docs/` for the full design record:
    this project actually uses, and why the Windows machine is a pull-only test target, never an
    edit target.
 
-## Current status: Phase 2 — minimal prototype
+## Current status: initialization guidance and a startup placeholder
 
-This repo implements two tools over MCP stdio — `startup()`, a lightweight, argument-free
-entrypoint that returns short, stable, versioned guidance with no retrieval at all, and
-`ground(purpose, role?)`, the full deterministic retrieval call, backed by a **local fixture**
-that stands in for live Brain retrieval (no Google Drive access yet — see decision 1 in
-`docs/07-decisions-needed.md`). See `docs/02-architecture.md`'s "Tool surface" section for why
-it's split this way. It exists to let Phase 1/Phase 2 client-behavior questions (does Claude
-Desktop actually invoke either tool reliably? does Claude Desktop ↔ Web continuity work? per
-`docs/06-test-plan.md`) get answered before any live-data risk is taken on.
+The server exposes two tools over MCP stdio:
 
+```text
+startup() -> "to be defined"
+ground(purpose, role?) -> legacy fixture grounding bundle
 ```
-startup()
-  -> { "version": "v1", "guidance": "...", "next_action": "ground(purpose, role?)" }
 
-ground(purpose="devotions")
-  -> { "status": "READY", "grounding": {...}, "sources": [...], ... }
-```
+The previous optional arguments `purpose` and `role` are accepted for compatibility
+and ignored. The tool performs no retrieval and reports no grounding status.
+Existing fixture retrieval code and its tests are retained as a prototype, but
+are exposed only by the legacy `ground` tool, not `startup`.
+The `ground` tool was added in a parallel remote update and is retained as a
+fixture prototype; its READY status does not establish live Brain grounding. The older design documents describe that prototype;
+they do not require callers to invoke the current placeholder.
 
 ## Project layout
 
 ```
-src/startup_mcp/
-  server.py       MCP entrypoint (stdio), registers `startup` (lightweight) and `ground`
-                   (full retrieval)
+src/zmcp/
+  server.py       MCP entrypoint (stdio), registers the `startup` tool
   procedure.py     The deterministic startup procedure (brief steps 1-9)
   bundle.py        Assembles the final response bundle, applies the context budget
   config.py        Fixture path / context-budget configuration
@@ -72,7 +69,7 @@ examples/
 ## Running locally
 
 ```bash
-cd startup-mcp
+cd zmcp
 pip install -e ".[dev]"
 pytest
 ```
@@ -83,7 +80,7 @@ machine — if so, use `pytest --basetemp=.pytest-tmp` instead.
 Run the server directly over stdio (for manual MCP client testing):
 
 ```bash
-python3 -m startup_mcp.server
+python3 -m zmcp.server
 ```
 
 ## Wiring into Claude Desktop
@@ -95,14 +92,14 @@ Oct 2026 (Claude Desktop 4.4212.0) the real path was
 `%LOCALAPPDATA%\Claude-Data\claude_<per-install-id>\claude_desktop_config.json`, a randomly
 per-install-suffixed directory under `Local\Claude-Data`. Search under `%LOCALAPPDATA%` for
 `claude_desktop_config.json` rather than assuming the path on Windows), pointing
-`STARTUP_MCP_FIXTURE_ROOT` at an absolute path if you don't want the bundled default fixture,
-then restart Claude Desktop. The `STARTUP_MCP_*` environment variables are optional — omit them
+`ZMCP_FIXTURE_ROOT` at an absolute path if you don't want the bundled default fixture,
+then restart Claude Desktop. The `ZMCP_*` environment variables are optional — omit them
 to use the bundled fixture and a 20,000-character context budget. On Windows, `"command":
 "python3"` in the example config may need to be `"python"` instead — check which resolves on
 your machine.
 
 MCP server logs on Windows land in `%LOCALAPPDATA%\Claude\logs\` — this server's own stderr
-diagnostics appear in `mcp-server-startup-mcp.log`, while the client's own connection-level log
+diagnostics appear in `mcp-server-zmcp.log`, while the client's own connection-level log
 (showing the actual `initialize`/`tools/list`/`tools/call` traffic) is `main.log`.
 
 **ChatGPT Desktop wiring is not yet validated** — see `docs/01-feasibility.md` §1 and
@@ -119,3 +116,24 @@ transfers.
 - No hands-on verification against a running Claude Desktop or ChatGPT Desktop install — the
   server has only been exercised via direct Python calls and the SDK's in-process `list_tools()`
   in this environment, which has no desktop client available to test against.
+
+## Renamed from Startup MCP
+
+The project, Python package, MCP server, CLI command, and desktop plugin are now
+`zmcp`. Settings use `ZMCP_FIXTURE_ROOT`, `ZMCP_CONTEXT_BUDGET_CHARS`, and
+`ZMCP_LOG_LEVEL`; the desktop launcher also accepts `ZMCP_PYTHON`. The tool remains
+`startup(purpose, role?)`. Update existing client configurations and reinstall the
+Python package after pulling this rename. Historical logs retain their old names.
+
+Build the private ChatGPT desktop plugin ZIP with:
+
+```bash
+python packaging/build_chatgpt_plugin.py
+```
+
+The output is `dist/zmcp-chatgpt-0.1.0.zip`. Extract it and follow `INSTALL.txt`.
+On Windows the installer registers `zmcp` at `%USERPROFILE%\.codex\plugins\zmcp`
+and stores its runtime at `%USERPROFILE%\.zmcp\runtime-0.1.0`. An existing
+`startup-mcp` installation is separate; remove its old marketplace entry using
+the earlier uninstall instructions. This rename does not modify installations
+on other computers.

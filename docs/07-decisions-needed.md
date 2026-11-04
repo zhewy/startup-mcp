@@ -1,5 +1,11 @@
 # Decisions Requiring User Approval
 
+> Current behaviour (4 Nov 2026): `startup()` is a placeholder returning
+> `"to be defined"`; no startup invocation is required. `ground` is retained as a
+> local fixture prototype. Earlier invocation strategies and startup payload
+> descriptions below are design history, not the current startup contract.
+
+
 These are the choices made provisionally in this repo that the brief flags as needing explicit
 sign-off before Phase 3 (live Brain integration) proceeds. Nothing below has been acted on against
 live Brain infrastructure — Phase 2 uses only a local fixture.
@@ -13,7 +19,7 @@ live Brain infrastructure — Phase 2 uses only a local fixture.
    picker-based flow (more setup friction, smaller blast radius if the token is ever compromised).
 
 2. **Where OAuth credentials and tokens live.** Proposed: user-local config directory
-   (`~/.config/startup-mcp/`), never committed to this repository, never logged. Confirm this
+   (`~/.config/zmcp/`), never committed to this repository, never logged. Confirm this
    location/approach is acceptable, and confirm the repository's `.gitignore` should explicitly
    exclude any such path if the server is ever run from inside a clone of this repo.
 

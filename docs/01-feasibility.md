@@ -12,7 +12,7 @@ before relying on it.**
 | **Claude Desktop** | Yes. Local MCP servers are configured directly in `claude_desktop_config.json` (macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`; Windows: `%APPDATA%\Claude\claude_desktop_config.json`) and launched by the app as a child process over stdio. This is Anthropic's original, primary MCP transport and is well established. | High |
 | **ChatGPT Desktop** | Unclear / contested. OpenAI's documented, supported MCP transports for ChatGPT are remote (Streamable HTTP, SSE) via "Developer Mode" (beta, plan-gated — at least one source says Team plans are excluded). Reference stdio servers (filesystem, Figma Dev Mode, local Stripe MCP) are reported **not** to load. A more recent (Oct 2026) community guide claims the desktop app's MCP settings can run local stdio servers, but this conflicts with OpenAI's own Developer Mode docs from earlier in 2026. | Low — contradictory sources |
 
-**Consequence for architecture:** Startup MCP cannot assume it will be launched the same way by
+**Consequence for architecture:** zmcp cannot assume it will be launched the same way by
 both clients. It must work as a standard stdio MCP server (satisfies Claude Desktop today), and
 the implementation should not hard-wire stdio-only assumptions into business logic, so that a thin
 Streamable-HTTP transport wrapper could be added later for ChatGPT Desktop without touching the
@@ -29,10 +29,10 @@ practical, confirmed pattern used by third-party Google Drive MCP servers is:
 - Register your own OAuth 2.0 **Desktop app** client in Google Cloud Console (not "Web
   application" — that's for server-side redirect flows).
 - Run a one-time local OAuth consent flow from the MCP server itself the first time it starts.
-- Cache the resulting refresh token locally (e.g. `~/.config/startup-mcp/token.json`, file
+- Cache the resulting refresh token locally (e.g. `~/.config/zmcp/token.json`, file
   permissions `0600`), and refresh it silently on subsequent runs.
 
-**Decision required (see `07-decisions-needed.md`):** Startup MCP will run its own Google OAuth
+**Decision required (see `07-decisions-needed.md`):** zmcp will run its own Google OAuth
 client and maintain its own token cache. It will *not* attempt to read or depend on either
 desktop app's connector session. This is the only pattern with public, working precedent.
 

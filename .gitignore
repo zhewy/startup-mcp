@@ -8,6 +8,6 @@ dist/
 
 # Never commit local OAuth credentials or cached tokens (see docs/04-authentication.md and
 # docs/07-decisions-needed.md decision 2).
-.config/startup-mcp/
+.config/zmcp/
 oauth_client.json
 token.json
