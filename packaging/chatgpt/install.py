@@ -26,7 +26,7 @@ def main():
     interpreter = runtime_python()
     if not interpreter.exists():
         venv.EnvBuilder(with_pip=True).create(interpreter.parent.parent)
-    subprocess.run([str(interpreter), "-m", "pip", "install", "mcp==2.3.0"], check=True)
+    subprocess.run([str(interpreter), "-m", "pip", "install", "mcp==2.3.0", "google-auth>=2.0", "google-auth-oauthlib>=1.0"], check=True)
     if root != destination:
         if destination.exists() and not matches:
             raise SystemExit("An unregistered zmcp folder already exists; left unchanged.")

@@ -74,3 +74,7 @@ def main() -> None:
     except Exception:
         raise SystemExit("Drive consent failed; no credential was saved") from None
     print("Read-only Drive authentication saved locally.")
+
+
+if __name__ == "__main__":
+    main()

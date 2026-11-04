@@ -14,13 +14,22 @@ This ZIP is for local desktop use. It is not a hosted MCP for ChatGPT web/mobile
 5. Select zmcp with @ and ask:
    What is Brain and where is its initialization document?
 
-install.py downloads mcp==2.3.0 and dependencies from your configured Python
+install.py downloads mcp==2.3.0, Google read-only OAuth dependencies from your configured Python
 package index into ~/.zmcp/runtime-0.1.0. It copies the plugin into
 ~/.codex/plugins/zmcp and registers ./.codex/plugins/zmcp in
 ~/.agents/plugins/marketplace.json, preserving other entries and
 backing up an existing marketplace before changing it. Python must be on the
 PATH available to ChatGPT; if necessary set mcp.json command to its full path.
-No credentials are included or requested. The launcher makes no automatic
+No credentials are included in the ZIP. To enable explicit refresh-config, create a
+Google Cloud Desktop OAuth client, enable Drive API, configure the consent screen,
+and save its downloaded JSON at ~/.config/zmcp/oauth_client.json (or set
+ZMCP_OAUTH_CLIENT). In the installed plugin folder, run the runtime Python with
+server/src on PYTHONPATH: python -c "import runpy,sys;sys.path.insert(0,'server/src');runpy.run_module('zmcp.auth',run_name='__main__')"
+using the runtime interpreter at ~/.zmcp/runtime-0.1.0/bin/python (Windows:
+%USERPROFILE%\.zmcp\runtime-0.1.0\Scripts\python.exe). This opens a browser
+for one-time read-only consent and stores a private renewable credential locally.
+No token should be shared or committed. Refresh remains manually invoked.
+The launcher makes no automatic
 package downloads. Setup needs network access; startup calls do not.
 
 MCP connection instructions include exactly:
@@ -36,8 +45,8 @@ A role tool for architect/librarian is under consideration, not implemented.
 
 Verification: the packaged MCP handshake and tool discovery were checked using
 an in-memory Python MCP client; fixture logic passes the repository tests.
-The subprocess stdio handshake and the client tool-call response timed out in
-this environment, so transport verification is incomplete. A ChatGPT desktop
+The subprocess stdio handshake and client tool-call response have not been
+reverified for this package in this environment, so transport verification is incomplete. A ChatGPT desktop
 installation was not available here. Treat this as a desktop test package,
 not a verified desktop installation.
 
