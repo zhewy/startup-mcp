@@ -97,8 +97,8 @@ def _unique_link(content: str, label: str, pattern: str) -> str:
     return matches.pop()
 
 
-def discover_sources(reader) -> list[dict]:
-    """Follow explicit designations in Brain's initialization and routing documents."""
+def _discover_sources_with_evidence(reader) -> tuple[list[dict], dict[str, dict]]:
+    """Return designations and the exact documents that established them."""
     bootstrap = reader.read(BRAIN_INITIALIZATION_ID)
     routing_id = _unique_link(bootstrap["content"], "routing", r"canonical routing guide|AI-canonicals — purpose and routing")
     routing = reader.read(routing_id)
@@ -108,9 +108,16 @@ def discover_sources(reader) -> list[dict]:
     bootstrap_base = _unique_link(bootstrap["content"], "Base", r"one designated Base Contract|Read Base \[Base Contract")
     if base_id != bootstrap_base:
         raise ValueError("designation: Base conflicts between initialization and routing")
-    return [{"name": "initialization", "source_id": BRAIN_INITIALIZATION_ID},
-            {"name": "routing", "source_id": routing_id},
-            {"name": "base", "source_id": base_id}]
+    entries = [{"name": "initialization", "source_id": BRAIN_INITIALIZATION_ID},
+               {"name": "routing", "source_id": routing_id},
+               {"name": "base", "source_id": base_id}]
+    return entries, {BRAIN_INITIALIZATION_ID: bootstrap, routing_id: routing}
+
+
+def discover_sources(reader) -> list[dict]:
+    """Follow explicit designations in Brain's initialization and routing documents."""
+    entries, _ = _discover_sources_with_evidence(reader)
+    return entries
 
 
 def _validate_cache(data: object) -> dict:
@@ -159,7 +166,10 @@ def _refresh(cache_path: Path, designation_path: Path | None, reader) -> dict:
         if reader is None:
             from .auth import access_token, TOKEN
             reader = DriveReader(access_token(Path(os.environ.get("ZMCP_OAUTH_TOKEN", TOKEN))))
-        entries = _designations(designation_path) if designation_path is not None else discover_sources(reader)
+        if designation_path is None:
+            entries, discovery_evidence = _discover_sources_with_evidence(reader)
+        else:
+            entries, discovery_evidence = _designations(designation_path), {}
         receipt["sources"] = entries
         records = []
         for entry in entries:
@@ -173,6 +183,8 @@ def _refresh(cache_path: Path, designation_path: Path | None, reader) -> dict:
                             for k in ("title", "version", "modified_at", "content"))):
                 raise ValueError(f"invalid or empty source: {entry['name']}")
             datetime.fromisoformat(record["modified_at"].replace("Z", "+00:00"))
+            if entry["source_id"] in discovery_evidence and record != discovery_evidence[entry["source_id"]]:
+                raise ValueError("designation: source changed after discovery")
             records.append({**record, "name": entry["name"], "sha256": _digest(record["content"])})
         if receipt["missing"]:
             raise ValueError("required designated material is missing")

@@ -277,3 +277,25 @@ def test_ambiguous_routing_designation(tmp_path):
     result = refresh_config(tmp_path / "cache.json", reader=reader)
     assert result["status"] == "FAILED"
     assert "ambiguous" in result["errors"][0]
+
+def test_discovery_race_preserves_previous_cache(tmp_path):
+    cache = tmp_path / "cache.json"
+    assert refresh_config(cache, reader=RoutingReader())["status"] == "REFRESHED"
+    original = cache.read_bytes()
+    reader = RoutingReader()
+    initial_read = reader.read
+    calls = {"routing123": 0}
+    def changed_routing(sid):
+        row = initial_read(sid)
+        if sid == "routing123":
+            calls[sid] += 1
+            if calls[sid] == 2:
+                row["content"] = "Base [Base Contract — Brain](https://drive.google.com/file/d/newbase123/view)"
+                row["version"] = "2"
+        return row
+    reader.read = changed_routing
+    receipt = refresh_config(cache, reader=reader)
+    assert receipt["status"] == "FAILED"
+    assert any("source changed after discovery" in error for error in receipt["errors"])
+    assert not receipt["cache_activated"]
+    assert cache.read_bytes() == original
