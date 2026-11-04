@@ -9,6 +9,11 @@
 
 ## Current public contract (4 Nov 2026)
 
+`refresh-config() -> object` explicitly compares and refreshes the configuration
+snapshot from designated Brain sources. See [the refresh contract](10-refresh-config.md)
+for setup, validation, transactional activation and receipt fields. It never runs
+at startup and does not make the fixture grounding pipeline live.
+
 `startup(purpose: string | null = null, role: string | null = null) -> string`
 returns exactly `"to be defined"`. Arguments are accepted for compatibility and
 ignored. No retrieval or grounding validation occurs; callers need not invoke it.

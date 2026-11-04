@@ -33,12 +33,16 @@ See `docs/` for the full design record:
 
 ## Current status: initialization guidance and a startup placeholder
 
-The server exposes two tools over MCP stdio:
+The server exposes three tools over MCP stdio:
 
 ```text
 startup() -> "to be defined"
 ground(purpose, role?) -> legacy fixture grounding bundle
+refresh-config() -> explicit Brain configuration comparison and atomic cache refresh
 ```
+
+The manual refresh operation is configured separately and performs no startup
+freshness checks. See [configuration, transaction guarantees and receipts](docs/10-refresh-config.md).
 
 The previous optional arguments `purpose` and `role` are accepted for compatibility
 and ignored. The tool performs no retrieval and reports no grounding status.
@@ -108,8 +112,8 @@ transfers.
 
 ## Explicitly not yet done
 
-- No live Google Drive retrieval (Phase 3 — gated on the decisions in
-  `docs/07-decisions-needed.md`).
+- Live read-only Drive retrieval is limited to explicitly designated configuration
+  documents through `refresh-config`; the grounding prototype remains fixture-only.
 - No OAuth flow (`docs/04-authentication.md` describes the intended design, unimplemented).
 - No MCP `prompts` entry for explicit, non-model-mediated invocation (proposed, not yet built —
   decision 6 in `docs/07-decisions-needed.md`).
