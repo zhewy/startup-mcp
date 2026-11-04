@@ -1,10 +1,12 @@
 # zmcp
 
 A lightweight MCP server for Brain context and AI startup guidance. Connection
-initialization supplies Brain's description, folder link, and initialization link.
-The `startup` tool is currently reserved and returns only `"to be defined"`; there
-is no need to call it. A separate `role` call for `architect` or `librarian` is
-under consideration, not implemented.
+initialization supplies Brain's description and initialization link.
+The `startup` tool gives the caller Brain's initialization entry point. The
+calling session uses its own authorized Drive connection to read current Brain
+routing, then resolves its assigned role and applicable guidance there. No role
+is the default unless a standing role was explicitly assigned. zmcp does not
+read those documents for the caller or assign a role.
 
 See `docs/` for the full design record:
 
@@ -31,12 +33,12 @@ See `docs/` for the full design record:
    this project actually uses, and why the Windows machine is a pull-only test target, never an
    edit target.
 
-## Current status: initialization guidance and a startup placeholder
+## Current status: Brain-directed startup guidance
 
 The server exposes three tools over MCP stdio:
 
 ```text
-startup() -> "to be defined"
+startup() -> Brain initialization route and caller instructions
 ground(purpose, role?) -> legacy fixture grounding bundle
 refresh-config() -> explicit Brain configuration comparison and atomic cache refresh
 ```
@@ -46,11 +48,22 @@ initialization and routing, and performs no startup freshness checks. See [confi
 
 The previous optional arguments `purpose` and `role` are accepted for compatibility
 and ignored. The tool performs no retrieval and reports no grounding status.
+The calling session must follow the current Brain routing; this static entry link
+is not a current-role designation or a freshness claim.
 Existing fixture retrieval code and its tests are retained as a prototype, but
 are exposed only by the legacy `ground` tool, not `startup`.
 The `ground` tool was added in a parallel remote update and is retained as a
-fixture prototype; its READY status does not establish live Brain grounding. The older design documents describe that prototype;
-they do not require callers to invoke the current placeholder.
+fixture prototype; its READY status does not establish live Brain grounding. The older design documents describe that prototype; they do not describe
+current Brain-directed role grounding.
+
+## Future consideration: Brain grounding cache
+
+A later version could cache designated Brain guidance for local reading. That is
+not part of the current startup route: the calling session reads current Brain
+sources through its own authorized connection. Any cache design needs explicit
+source and role scope, provenance, integrity checks, failure behavior, and a
+separately designed, explicitly invoked refresh or freshness check. The existing
+manual `refresh-config` snapshot is not used for role grounding.
 
 ## Project layout
 
@@ -112,8 +125,9 @@ transfers.
 
 ## Explicitly not yet done
 
-- Live read-only Drive retrieval is limited to explicitly designated configuration
-  documents through `refresh-config`; the grounding prototype remains fixture-only.
+- The Brain-directed startup route does not use a cache. The previously committed
+  `refresh-config` remains an independent, explicitly invoked configuration snapshot
+  utility; its cache is not consumed by startup or role grounding.
 - Local one-time read-only Drive OAuth is available through `zmcp-auth`; see `docs/10-refresh-config.md`.
 - No MCP `prompts` entry for explicit, non-model-mediated invocation (proposed, not yet built —
   decision 6 in `docs/07-decisions-needed.md`).
@@ -135,7 +149,7 @@ Build the private ChatGPT desktop plugin ZIP with:
 python packaging/build_chatgpt_plugin.py
 ```
 
-The output is `dist/zmcp-chatgpt-0.1.0.zip`. Extract it and follow `INSTALL.txt`.
+The output is `dist/zmcp-chatgpt-0.1.1.zip`. Extract it and follow `INSTALL.txt`.
 On Windows the installer registers `zmcp` at `%USERPROFILE%\.codex\plugins\zmcp`
 and stores its runtime at `%USERPROFILE%\.zmcp\runtime-0.1.0`. An existing
 `startup-mcp` installation is separate; remove its old marketplace entry using

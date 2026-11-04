@@ -1,8 +1,9 @@
 # Manual Brain configuration refresh
 
 `refresh-config()` is explicitly invoked. It does not run at process startup, on
-`startup()` or on `ground()`. `startup()` remains a placeholder; `ground()` reads
-bundled fixtures. Neither consumes the configuration cache or delivers live roles.
+`startup()` or on `ground()`. `startup()` returns Brain-directed caller guidance;
+`ground()` reads bundled fixtures. Neither consumes this configuration cache or
+delivers live roles.
 
 ## First use on a local host
 

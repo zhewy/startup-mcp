@@ -25,9 +25,22 @@ logging.basicConfig(
 )
 logger = logging.getLogger("zmcp")
 
+BRAIN_ROUTE = (
+    "Brain initialization: https://drive.google.com/file/d/1bGVXeMqG899ScKLdADsyYtPP4tWOLyuA/view\n"
+    "Use your own authorized Drive connection to read that current source. Follow its "
+    "current canonical routing guide to find the applicable guidance and source IDs; "
+    "do not infer paths or IDs from this tool. No role is the default unless the user "
+    "has explicitly assigned a standing role. Read the current designated No role profile "
+    "or assigned role definition, Base, and task-applicable guidance at the scope Brain "
+    "requires. Report missing, inaccessible, or conflicting designations rather than guessing. "
+    "This server has not read Brain or verified freshness. It does not use the configuration "
+    "cache for this route, and refresh-config is a separate, manual operation."
+)
+
 TOOL_DESCRIPTION = (
-    "Placeholder for future startup guidance. Returns only 'to be defined'. "
-    "No grounding is retrieved or validated. There is no need to call this tool."
+    "Give the caller Brain's initialization entry point and instructions to resolve its "
+    "own current role guidance through authoritative routing. No Drive read, cache use, "
+    "role assignment, or grounding claim is performed by this tool."
 )
 
 
@@ -51,12 +64,9 @@ def handle_ground(
 
 SERVER_INSTRUCTIONS = (
     "Brain is z’s shared knowledge, context and AI-governance store.\n"
-    "Folder: https://drive.google.com/drive/folders/1F3IchT4CKGqTSEj1CSpMpj7GdqTkxy54\n"
-    "Initialization: https://drive.google.com/file/d/1bGVXeMqG899ScKLdADsyYtPP4tWOLyuA/view\n\n"
-    "The startup tool is currently a placeholder returning 'to be defined'; "
-    "there is no need to call it. Connecting provides these links but does not "
-    "retrieve or validate Brain content."
+    + BRAIN_ROUTE
 )
+
 
 mcp = MCPServer(
     name="zmcp",
@@ -74,12 +84,9 @@ logger.info(
 
 @mcp.tool(name="startup", description=TOOL_DESCRIPTION)
 def startup(purpose: str | None = None, role: str | None = None) -> str:
-    """Accept previous arguments for compatibility; no retrieval is performed."""
-    logger.info(
-        "startup tool invoked: pid=%s purpose=%r role_hint=%r", os.getpid(), purpose, role
-    )
-    logger.info("startup tool returned: pid=%s placeholder='to be defined'", os.getpid())
-    return "to be defined"
+    """Return a static route; compatibility hints do not select or authorize a role."""
+    logger.info("startup route invoked: pid=%s", os.getpid())
+    return BRAIN_ROUTE
 
 
 @mcp.tool(

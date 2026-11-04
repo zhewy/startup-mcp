@@ -128,7 +128,7 @@ def test_startup_does_not_refresh(monkeypatch):
     def forbidden(*a, **kw):
         raise AssertionError("automatic refresh")
     monkeypatch.setattr("zmcp.server.run_refresh_config", forbidden)
-    assert startup() == "to be defined"
+    assert "Brain initialization:" in startup()
 
 
 def test_tool_registered():

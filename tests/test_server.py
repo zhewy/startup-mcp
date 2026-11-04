@@ -12,13 +12,17 @@ DEFAULT_FIXTURE_ROOT = (
 )
 
 
-def test_public_startup_is_a_placeholder_without_retrieval(monkeypatch):
+def test_public_startup_routes_caller_without_retrieval(monkeypatch):
     def unexpected_retrieval(*args, **kwargs):
         raise AssertionError("Placeholder must not retrieve fixture grounding")
 
     monkeypatch.setattr("zmcp.server.run_startup", unexpected_retrieval)
-    assert startup() == "to be defined"
-    assert startup(purpose="librarian", role="librarian") == "to be defined"
+    route = startup()
+    assert "1bGVXeMqG899ScKLdADsyYtPP4tWOLyuA" in route
+    assert "No role is the default" in route
+    assert "current canonical routing guide" in route
+    assert "This server has not read Brain" in route
+    assert startup(purpose="librarian", role="librarian") == route
 
 
 def _copy_fixture(tmp_path: Path) -> Path:
@@ -197,4 +201,5 @@ def test_budget_truncation_drops_lowest_priority_content_first(tmp_path):
 
 
 def test_startup_is_static_and_deterministic():
-    assert startup() == startup() == "to be defined"
+    assert startup() == startup()
+    assert "refresh-config is a separate, manual operation" in startup()

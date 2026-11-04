@@ -1,13 +1,17 @@
-zmcp — private local ChatGPT desktop plugin (0.1.0)
+zmcp — private local ChatGPT desktop plugin (0.1.1)
 
 Requires a ChatGPT desktop version with local plugin support and Python 3.10+.
 This ZIP is for local desktop use. It is not a hosted MCP for ChatGPT web/mobile.
 
 1. Extract this ZIP to a folder.
 2. Open a terminal in the extracted folder containing plugin.json.
-3. Run: python install.py
+3. On Windows, run install-windows.cmd. It uses the Python launcher when
+   available and falls back to python. On other systems, run: python install.py
    If your Python command is python3, use python3 install.py and change the
    command in mcp.json from python to python3 before restarting ChatGPT.
+   Re-running the installer overwrites an already registered zmcp plugin folder;
+   it preserves other marketplace entries. If ChatGPT still shows the old tool
+   text after restart, disable and reinstall zmcp from the personal marketplace.
 4. Fully quit and restart ChatGPT desktop. In Work mode or Codex, open Plugins,
    choose the personal-local marketplace (or your existing personal marketplace),
    and install/enable zmcp. Use a task that executes locally.
@@ -32,16 +36,14 @@ No token should be shared or committed. Refresh remains manually invoked.
 The launcher makes no automatic
 package downloads. Setup needs network access; startup calls do not.
 
-MCP connection instructions include exactly:
-Brain is z’s shared knowledge, context and AI-governance store.
-Folder: https://drive.google.com/drive/folders/1F3IchT4CKGqTSEj1CSpMpj7GdqTkxy54
-Initialization: https://drive.google.com/file/d/1bGVXeMqG899ScKLdADsyYtPP4tWOLyuA/view
-
-The host decides whether to expose initialization instructions to the model.
-Connecting does not read these links, authenticate to Drive, or call startup.
-The startup tool returns only "to be defined". There is no need to call it.
+MCP connection instructions provide the Brain initialization link and direct the
+caller to current canonical routing. The host decides whether to expose those
+instructions to the model. Connecting does not read Brain, authenticate to
+Drive, or call startup.
+The startup tool directs the caller to Brain initialization and current routing.
+No role is the default unless explicitly assigned. The caller must use its own
+Drive connection to read current designated guidance; zmcp does not read it.
 The legacy ground tool returns local fixture data, not live Brain grounding.
-A role tool for architect/librarian is under consideration, not implemented.
 
 Verification: the packaged MCP handshake and tool discovery were checked using
 an in-memory Python MCP client; fixture logic passes the repository tests.

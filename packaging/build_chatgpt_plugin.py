@@ -1,11 +1,13 @@
 """Build a private local plugin ZIP from current server source, excluding caches."""
 from pathlib import Path
+import json
 import zipfile
 
 
 def main():
     project = Path(__file__).resolve().parent.parent
-    output = project / "dist" / "zmcp-chatgpt-0.1.0.zip"
+    version = json.loads((project / "packaging" / "chatgpt" / "plugin.json").read_text(encoding="utf-8"))["version"]
+    output = project / "dist" / f"zmcp-chatgpt-{version}.zip"
     output.parent.mkdir(exist_ok=True)
     files = []
     template = project / "packaging" / "chatgpt"
